@@ -1,0 +1,2298 @@
+<title>Draft Console</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Mono:wght@400;600&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&display=swap">
+<style>
+:root{
+  --ground:#E7EAEE; --surface:#FDFDFE; --surface-2:#F0F3F7; --line:#C7CED8; --line-soft:#DDE2E9;
+  --text:#16202B; --dim:#596673; --accent:#C24A16; --accent-soft:rgba(194,74,22,.10);
+  --qb:#6D46C4; --rb:#177A59; --wr:#1C6ABA; --te:#9C6C12; --k:#68727F; --dst:#96455E;
+  --up:#177A59; --up-soft:rgba(23,122,89,.12);
+  --down:#A33A2A; --down-soft:rgba(163,58,42,.12);
+  --warn:#8A5300; --warn-soft:rgba(138,83,0,.12);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --ground:#121924; --surface:#1A2331; --surface-2:#212C3C; --line:#2F3B4D; --line-soft:#26313F;
+    --text:#E4E9EF; --dim:#93A0B0; --accent:#F2793C; --accent-soft:rgba(242,121,60,.14);
+    --qb:#A98BF0; --rb:#4FC79C; --wr:#62AEF5; --te:#E0AC4E; --k:#96A2AF; --dst:#DE8AA1;
+    --up:#4FC79C; --up-soft:rgba(79,199,156,.14);
+    --down:#F0837A; --down-soft:rgba(240,131,122,.14);
+    --warn:#E0AC4E; --warn-soft:rgba(224,172,78,.13);
+  }
+}
+:root[data-theme="dark"]{
+  --ground:#121924; --surface:#1A2331; --surface-2:#212C3C; --line:#2F3B4D; --line-soft:#26313F;
+  --text:#E4E9EF; --dim:#93A0B0; --accent:#F2793C; --accent-soft:rgba(242,121,60,.14);
+  --qb:#A98BF0; --rb:#4FC79C; --wr:#62AEF5; --te:#E0AC4E; --k:#96A2AF; --dst:#DE8AA1;
+  --up:#4FC79C; --up-soft:rgba(79,199,156,.14);
+  --down:#F0837A; --down-soft:rgba(240,131,122,.14);
+  --warn:#E0AC4E; --warn-soft:rgba(224,172,78,.13);
+}
+*{box-sizing:border-box}
+body{
+  margin:0; background:var(--ground); color:var(--text);
+  font-family:"Source Serif 4",Georgia,serif; font-size:16px; line-height:1.55;
+  -webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:1000px; margin:0 auto; padding:0 20px 80px}
+h1,h2,h3,.eyebrow,.lbl,.badge,.pick-nm,.pos-tag,button,select{font-family:"Barlow Condensed","Arial Narrow",sans-serif}
+.mono,.vor,.num{font-family:"IBM Plex Mono",ui-monospace,monospace; font-variant-numeric:tabular-nums}
+
+header{padding:36px 0 18px; border-bottom:3px solid var(--text)}
+.eyebrow{font-size:.74rem; font-weight:600; letter-spacing:.18em; text-transform:uppercase; color:var(--accent); margin:0 0 8px}
+h1{font-size:clamp(2rem,5.5vw,3.1rem); font-weight:700; line-height:.95; margin:0; letter-spacing:-.01em; text-transform:uppercase}
+.sub{margin:10px 0 0; color:var(--dim); font-size:.98rem; max-width:60ch}
+
+/* controls */
+.panel{
+  display:flex; flex-wrap:wrap; gap:12px; align-items:flex-end; justify-content:center;
+  margin:0; flex:1 1 520px; padding:16px 18px; background:var(--surface);
+  border:1px solid var(--line); border-radius:2px;
+}
+.field{display:flex; flex-direction:column; gap:4px}
+.lbl{font-size:.68rem; font-weight:600; letter-spacing:.14em; text-transform:uppercase; color:var(--dim)}
+select{
+  font-size:1rem; font-weight:600; padding:7px 10px; border-radius:2px; cursor:pointer;
+  background:var(--surface-2); color:var(--text); border:1px solid var(--line); min-width:112px;
+}
+#go{
+  flex:1 1 220px; max-width:340px; font-size:1.15rem; font-weight:700; letter-spacing:.09em; text-transform:uppercase;
+  padding:13px 22px; border-radius:2px; cursor:pointer; border:1px solid var(--accent);
+  background:var(--accent); color:#fff; min-height:46px;
+}
+#go:hover:not(:disabled){filter:brightness(1.08)}
+#go:disabled{opacity:.55; cursor:default}
+:root:not([data-theme="light"]) #go{color:#12181f}
+@media (prefers-color-scheme:light){#go{color:#fff}}
+.stamp{font-size:.8rem; color:var(--dim); flex-basis:100%; text-align:center}
+input#league,input#user{ width:150px;
+
+  font-family:"IBM Plex Mono",monospace; font-size:.95rem; font-weight:600; padding:7px 10px;
+  border-radius:2px; background:var(--surface-2); color:var(--text);
+  border:1px solid var(--line);
+}
+.ladder{
+  flex-basis:100%; margin:2px 0 0; text-align:center; font-family:"IBM Plex Mono",ui-monospace,monospace;
+  font-size:.8rem; color:var(--dim); font-variant-numeric:tabular-nums; line-height:1.7;
+}
+.ladder b{color:var(--accent); font-weight:600}
+
+/* The read on the pick, rendered inside the hero under the recommendation. */
+#brief:not(:empty){margin-top:15px; padding-top:13px; border-top:1px solid var(--line)}
+.brief-hd{display:flex; flex-wrap:wrap; gap:9px; align-items:baseline; margin:0 0 8px}
+.brief-ttl{font-family:"Barlow Condensed",sans-serif; font-size:.7rem; font-weight:600;
+           letter-spacing:.16em; text-transform:uppercase; color:var(--dim)}
+/* Two columns of facts once there is room; one long column below that. */
+@media (min-width:760px){
+  .brief-list{display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:0 24px}
+  .brief-list li{border-bottom:1px solid var(--line-soft)}
+}
+.brief-conf{font-family:"Barlow Condensed",sans-serif; font-size:.68rem; font-weight:700;
+            letter-spacing:.12em; text-transform:uppercase; padding:2px 7px; border-radius:2px}
+.c-strong{color:var(--up); background:var(--up-soft)}
+.c-solid{color:var(--wr); background:rgba(28,106,186,.12)}
+.c-split{color:var(--warn); background:var(--warn-soft)}
+.c-thin{color:var(--down); background:var(--down-soft)}
+.brief-lead{margin:0 0 10px; font-size:.92rem; color:var(--dim); line-height:1.5; max-width:66ch}
+.brief-list{margin:0; padding:0; list-style:none}
+.brief-list li{padding:6px 0; border-bottom:1px solid var(--line-soft); font-size:.88rem; line-height:1.5}
+.brief-list li:last-child{border-bottom:0}
+.brief-k{display:block; font-family:"Barlow Condensed",sans-serif; font-size:.66rem;
+         font-weight:600; letter-spacing:.14em; text-transform:uppercase; color:var(--dim)}
+.squad-empty{margin:0; color:var(--dim); font-size:.85rem}
+.sq-grp{padding:5px 0; border-bottom:1px solid var(--line-soft)}
+.sq-grp:last-child{border-bottom:0}
+.sq-hd{display:flex; justify-content:space-between; align-items:baseline; gap:8px}
+.sq-pos{font-family:"Barlow Condensed",sans-serif; font-size:.82rem; font-weight:700; letter-spacing:.12em; text-transform:uppercase}
+.sq-ct{font-family:"IBM Plex Mono",monospace; font-size:.75rem; color:var(--dim); font-variant-numeric:tabular-nums}
+.sq-grp.short .sq-ct{color:var(--accent); font-weight:600}
+.sq-list{margin:2px 0 0; padding:0; list-style:none}
+.sq-list li{font-size:.9rem; line-height:1.45}
+.sq-inj{font-family:"Barlow Condensed",sans-serif; font-size:.68rem; font-weight:600; letter-spacing:.08em; text-transform:uppercase; color:var(--down)}
+.sq-none{margin:2px 0 0; color:var(--dim); font-size:.85rem}
+
+/* the answer */
+.answer{margin-top:24px; display:none}
+.clock{
+  display:flex; flex-wrap:wrap; gap:14px 26px; align-items:baseline; margin-bottom:14px;
+  padding:12px 18px; background:var(--surface-2); border:1px solid var(--line); border-radius:2px;
+}
+.clock div{display:flex; gap:8px; align-items:baseline}
+.clock .rost{flex-basis:100%; margin-top:4px}
+.clock .l{font-family:"Barlow Condensed",sans-serif; font-size:.68rem; font-weight:600; letter-spacing:.14em; text-transform:uppercase; color:var(--dim)}
+.clock .v{font-family:"IBM Plex Mono",monospace; font-weight:600; font-variant-numeric:tabular-nums}
+.clock.up{background:var(--accent-soft); border-color:var(--accent)}
+.clock.up .v{color:var(--accent)}
+.answer.on{display:grid; grid-template-columns:minmax(0,1fr); gap:26px; align-items:start}
+.main{order:1; min-width:0}
+.rail-l{order:2; min-width:0}
+.rail-r{order:3; min-width:0}
+.rail h2{margin:0 0 6px}
+.rail-note{margin:0; color:var(--dim); font-size:.88rem; max-width:60ch}
+
+/* Wide: tier health becomes a sticky left rail; my team drops full-width below. */
+@media (min-width:1180px){
+  .wrap{max-width:1330px}
+  .answer.on{grid-template-columns:288px minmax(0,1fr); gap:26px 30px}
+  .main{order:0; grid-column:2; grid-row:1}
+  .rail-l{order:0; grid-column:1; grid-row:1}
+  .rail-r{order:0; grid-column:1 / -1; grid-row:2}
+  .rail{padding:16px 18px; background:var(--surface); border:1px solid var(--line); border-radius:2px}
+  .rail-l{position:sticky; top:18px; border-left:3px solid var(--accent)}
+  .rail h2{font-size:1.05rem}
+  .rail-note{font-size:.8rem; line-height:1.45}
+  .rail-l .chips{flex-direction:column; gap:6px; margin-top:10px}
+  .rail-l .chip{width:100%; justify-content:space-between; gap:10px}
+}
+
+/* In the band where my team is still a full-width strip, lay it out in columns
+   rather than one very wide row per position. */
+@media (min-width:1180px) and (max-width:1319px){
+  .rail-r #squad{display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:0 24px; align-items:start}
+}
+
+/* Wider still: my team moves out to its own sticky right rail. */
+@media (min-width:1320px){
+  .wrap{max-width:1520px}
+  .answer.on{grid-template-columns:280px minmax(0,1fr) 280px; gap:0 28px}
+  .rail-r{grid-column:3; grid-row:1; position:sticky; top:18px; border-right:3px solid var(--line)}
+}
+.hero{
+  background:var(--surface); border:1px solid var(--line); border-left:4px solid var(--accent);
+  border-radius:2px; padding:22px 24px;
+}
+.hero .kicker{font-size:.7rem; font-weight:600; letter-spacing:.16em; text-transform:uppercase; color:var(--accent); margin:0 0 6px; font-family:"Barlow Condensed",sans-serif}
+.pick-nm{font-size:clamp(1.9rem,5vw,2.7rem); font-weight:700; line-height:1.02; margin:0; text-transform:uppercase}
+.pick-meta{margin:8px 0 0; font-size:.95rem; color:var(--dim)}
+.hero.contested{border-left-color:var(--warn)}
+.pick-why{margin:12px 0 0; font-size:1.02rem; max-width:64ch}
+.pos-tag{
+  display:inline-block; font-size:.72rem; font-weight:700; letter-spacing:.1em; padding:2px 7px;
+  border-radius:2px; margin-left:8px; vertical-align:6px;
+}
+.t-RB{color:var(--rb); background:var(--up-soft)} .t-WR{color:var(--wr); background:rgba(28,106,186,.12)}
+.t-TE{color:var(--te); background:var(--warn-soft)} .t-QB{color:var(--qb); background:rgba(109,70,196,.12)}
+.t-K{color:var(--k); background:var(--surface-2)} .t-DST{color:var(--dst); background:rgba(150,69,94,.12)}
+
+h2{font-size:1.3rem; font-weight:700; text-transform:uppercase; margin:30px 0 8px; letter-spacing:.02em}
+.scroll{overflow-x:auto; border:1px solid var(--line); border-radius:2px; background:var(--surface)}
+table{border-collapse:collapse; width:100%; font-size:.92rem}
+th{text-align:left; font-size:.7rem; font-weight:600; letter-spacing:.13em; text-transform:uppercase; color:var(--dim); padding:9px 12px; border-bottom:1px solid var(--line); background:var(--surface-2); white-space:nowrap; font-family:"Barlow Condensed",sans-serif}
+td{padding:8px 12px; border-bottom:1px solid var(--line-soft); vertical-align:top}
+tr:last-child td{border-bottom:0}
+td.num{text-align:right; white-space:nowrap}
+td.nm{font-family:"Barlow Condensed",sans-serif; font-size:1.03rem; font-weight:600; white-space:nowrap}
+td.note{color:var(--dim); font-size:.86rem; min-width:220px}
+.badge{font-size:.6rem; font-weight:700; letter-spacing:.09em; text-transform:uppercase; padding:1px 5px; border-radius:2px; margin-left:6px; white-space:nowrap}
+.b-up{color:var(--up); background:var(--up-soft)}
+.b-down{color:var(--down); background:var(--down-soft)}
+.b-warn{color:var(--warn); background:var(--warn-soft)}
+
+.over{margin-top:18px; font-size:.86rem}
+.over summary{cursor:pointer; font-family:"Barlow Condensed",sans-serif; font-size:.76rem; letter-spacing:.14em; text-transform:uppercase; color:var(--dim)}
+.over-row{display:flex; flex-wrap:wrap; gap:14px; align-items:flex-end; margin-top:10px; padding:14px 16px; background:var(--surface); border:1px solid var(--line); border-radius:2px}
+.over-note{margin:0; flex-basis:100%; color:var(--dim); font-size:.82rem}
+.rost{display:flex; flex-wrap:wrap; gap:6px; margin-top:10px}
+.rost span{font-family:"IBM Plex Mono",monospace; font-size:.78rem; padding:2px 7px; border:1px solid var(--line-soft); border-radius:2px; background:var(--surface)}
+.rost span.short{border-color:var(--accent); color:var(--accent); font-weight:600}
+.chips{display:flex; flex-wrap:wrap; gap:8px; margin-top:12px}
+.chip{
+  border:1px solid var(--line); border-radius:2px; background:var(--surface);
+  padding:7px 11px; font-size:.85rem; display:flex; gap:8px; align-items:baseline;
+}
+.chip b{font-family:"Barlow Condensed",sans-serif; font-size:.95rem; letter-spacing:.06em; text-transform:uppercase}
+.chip .n{font-family:"IBM Plex Mono",monospace; font-variant-numeric:tabular-nums; font-weight:600}
+.chip.dry{border-color:var(--down); background:var(--down-soft)}
+.chip.dry .n{color:var(--down)}
+
+/* Draft log — sits beside the controls. ESPN's feed does not move during a live
+   draft, so this paste box is the console's actual input. */
+.setup{display:flex; flex-wrap:wrap; gap:14px; align-items:stretch; margin:22px auto 0; max-width:1180px}
+.logbox{
+  flex:1 1 290px; max-width:360px; display:flex; flex-direction:column; gap:7px;
+  padding:14px 16px; background:var(--surface); border:1px solid var(--line);
+  border-left:3px solid var(--accent); border-radius:2px;
+}
+.logbox textarea{
+  flex:1 1 auto; min-height:72px; resize:vertical; width:100%;
+  font-family:"IBM Plex Mono",monospace; font-size:.78rem; line-height:1.4;
+  padding:7px 9px; border:1px solid var(--line); border-radius:2px;
+  background:var(--surface-2); color:var(--text);
+}
+.log-row{display:flex; gap:7px}
+.logbox button{
+  flex:1; font-family:"Barlow Condensed",sans-serif; font-size:.8rem; font-weight:600;
+  letter-spacing:.1em; text-transform:uppercase; padding:7px 10px; cursor:pointer;
+  border:1px solid var(--line); border-radius:2px; background:var(--surface-2); color:var(--text);
+}
+.logbox button:hover{border-color:var(--accent); color:var(--accent)}
+.logbox button.primary{background:var(--accent); border-color:var(--accent); color:#fff}
+:root:not([data-theme="light"]) .logbox button.primary{color:#12181f}
+@media (prefers-color-scheme:light){.logbox button.primary{color:#fff}}
+.log-stat{font-family:"IBM Plex Mono",monospace; font-size:.72rem; line-height:1.4; color:var(--dim)}
+.log-stat b{color:var(--text)}
+.log-stat .bad{color:var(--down)}
+
+/* states */
+.state{
+  margin-top:22px; padding:18px 20px; border:1px solid var(--line); border-radius:2px;
+  background:var(--surface); border-left:4px solid var(--warn); display:none;
+}
+.state.on{display:block}
+.state h3{margin:0 0 6px; font-size:1rem; text-transform:uppercase; letter-spacing:.06em; color:var(--warn)}
+.state p{margin:0 0 8px; max-width:66ch}
+.state p:last-child{margin-bottom:0}
+.state code{font-family:"IBM Plex Mono",monospace; font-size:.85rem; background:var(--surface-2); padding:1px 5px; border-radius:2px}
+.state.bad{border-left-color:var(--down)}
+.state.bad h3{color:var(--down)}
+
+.diag{margin-top:26px; font-size:.83rem; color:var(--dim)}
+.diag summary{cursor:pointer; font-family:"Barlow Condensed",sans-serif; font-size:.8rem; letter-spacing:.12em; text-transform:uppercase}
+.diag pre{
+  margin:10px 0 0; padding:12px; background:var(--surface); border:1px solid var(--line);
+  border-radius:2px; overflow-x:auto; font-size:.78rem; line-height:1.45; white-space:pre-wrap;
+}
+footer{margin-top:44px; padding-top:16px; border-top:1px solid var(--line); color:var(--dim); font-size:.83rem}
+/* Spans the full content width. Set in columns so it does not become
+   200-character lines on a wide monitor; drops to fewer columns as it narrows. */
+footer p{max-width:none; columns:3 300px; column-gap:36px}
+:focus-visible{outline:2px solid var(--accent); outline-offset:2px}
+</style>
+
+<div class="wrap">
+<header>
+  <p class="eyebrow">Fantasy draft assistant &middot; 2026</p>
+  <h1>Draft Console</h1>
+</header>
+
+<div class="setup">
+<div class="panel">
+  <div class="field">
+    <label class="lbl" for="prov">Platform</label>
+    <select id="prov">
+      <option value="espn">ESPN</option>
+      <option value="sleeper">Sleeper</option>
+    </select>
+  </div>
+  <div class="field">
+    <label class="lbl" for="league">League ID</label>
+    <input id="league" type="text" inputmode="numeric" spellcheck="false" value="129615399">
+  </div>
+  <div class="field">
+    <label class="lbl" for="slot">My pick</label>
+    <select id="slot"></select>
+  </div>
+  <div class="field">
+    <label class="lbl" for="need">Position</label>
+    <select id="need">
+      <option value="auto">Detected from roster</option>
+      <option value="RB">Running back</option>
+      <option value="WR">Receiver</option>
+      <option value="TE">Tight end</option>
+      <option value="QB">Quarterback</option>
+      <option value="K">Kicker</option>
+      <option value="DST">Defense</option>
+      <option value="BPA">Best available, any</option>
+    </select>
+  </div>
+  <button id="go" type="button">Who do I take?</button>
+  <p class="ladder" id="ladder"></p>
+  <div class="stamp" id="stamp"></div>
+</div>
+
+<div class="logbox">
+  <label class="lbl" for="logPaste">Draft log</label>
+  <textarea id="logPaste" spellcheck="false" placeholder="Paste ESPN's pick list"></textarea>
+  <div class="log-row">
+    <button class="primary" type="button" id="logLoad">Load</button>
+    <button type="button" id="logClear">Clear</button>
+  </div>
+  <div class="log-stat" id="logStat">No picks loaded.</div>
+</div>
+</div>
+
+<div class="state" id="state"><h3 id="stateH"></h3><div id="stateB"></div></div>
+
+<div class="answer" id="answer">
+
+  <aside class="rail rail-l">
+    <h2>Tier health</h2>
+    <p class="rail-note">How many are left in each of the analysts&rsquo; own tiers. When one goes red it is about to cliff &mdash; that is when reaching is justified.</p>
+    <div class="chips" id="chips"></div>
+  </aside>
+
+  <div class="main">
+    <div class="clock" id="clock"></div>
+    <div class="hero">
+      <p class="kicker" id="heroKicker">The pick</p>
+      <h2 class="pick-nm" id="heroName" style="margin:0"></h2>
+      <p class="pick-meta" id="heroMeta"></p>
+      <p class="pick-why" id="heroWhy"></p>
+      <div id="brief"></div>
+    </div>
+
+    <h2>Next best</h2>
+    <div class="scroll">
+      <table>
+        <thead><tr><th>Player</th><th>Pos</th><th class="num">Board</th><th class="num">VOR</th><th>Read</th></tr></thead>
+        <tbody id="alts"></tbody>
+      </table>
+    </div>
+
+    <h2>Gone since you last checked</h2>
+    <div class="scroll">
+      <table>
+        <thead><tr><th>Player</th><th>Pos</th><th class="num">Board rank</th></tr></thead>
+        <tbody id="gone"></tbody>
+      </table>
+    </div>
+
+    <details class="over">
+      <summary>Override</summary>
+      <div class="over-row">
+        <div class="field">
+          <label class="lbl" for="round">Round</label>
+          <select id="round"><option value="auto">Detected</option></select>
+        </div>
+        <div class="field">
+          <label class="lbl" for="teams">Teams</label>
+          <select id="teams"></select>
+        </div>
+        <div class="field" id="userWrap" hidden>
+          <label class="lbl" for="user">Sleeper name</label>
+          <input id="user" type="text" spellcheck="false" placeholder="username" value="DeMuyt">
+        </div>
+        <p class="over-note">Team count is detected from the league automatically &mdash; only change it if that fails. A Sleeper username is needed once, so the page can find your roster. The round is detected too; set it to plan ahead.</p>
+      </div>
+    </details>
+  </div>
+
+  <aside class="rail rail-r">
+    <h2>My team</h2>
+    <div id="squad"><p class="squad-empty">Press <b>Who do I take?</b> to load your roster.</p></div>
+  </aside>
+</div>
+
+<details class="diag">
+  <summary>Connection diagnostics</summary>
+  <pre id="diag">Not checked yet.</pre>
+</details>
+
+<footer>
+  <p><strong>Ranking comes from the analysts</strong> &mdash; both analysts' full top-100 boards, blended, 129 players deep with their own tier letters — refreshed 8 Sep 2026 with Mason's three FINAL boards (top-100 Sep 6, RB50 Sep 3, WR50 Sep 2) and Sal's three buy/sell videos (Sep 3, 5, 6). ESPN's projections are used only to order players neither analyst ranked, and those always sort below anyone who is ranked. The VOR column is shown for reference and is points above replacement, computed live from ESPN's projections. <strong>Scoring markers:</strong> when a league pays something other than 1.0 per reception, a &#9650;/&#9660; badge shows how much that moves a player <em>relative to replacement at his own position</em> &mdash; receivers and tight ends lose, pure rushers gain, quarterbacks are untouched. The analysts' order is left alone; the badge is an annotation, not a re-sort. Catch counts are ESTIMATED from position and positional rank with hand overrides, because no provider publishes per-stat projections &mdash; treat the number as a direction and a rough size, not a precise figure. Replacement level is derived from the league you point it at &mdash; its team count, starting lineup and flex slots &mdash; with the flex shared five backs, six receivers, one tight end. A 12-team league with a standard lineup gives RB30, WR31, TE14, QB13; a 10-team league is shallower and a 14-team deeper, and the whole board shifts with it. Player reads come from two analysts across eighteen videos, current to 6 Sep 2026 — including a COMPLETE top-100 board from each analyst, and Mason's FINAL pre-season boards at every position. Eight long-running disagreements CLOSED in the last batch, three of them because an analyst reversed himself; three new ones opened. Ten rows are still contested. Mason's board is built for a DOUBLE flex; in a single-flex league he says to move receivers down and Bowers up a tier, and that adjustment is reflected here. CONTESTED rows are genuine disagreements between two people looking at the same facts — recency does not settle them, and they are not averaged. Because the ranking is analyst-driven, it carries across leagues unchanged &mdash; only replacement level and the round plan adapt to each league's size and lineup. On Sleeper, ESPN projections are still borrowed for the VOR column and for unranked depth, joined by name. Read-only &mdash; this page cannot make a pick for you.</p>
+</footer>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  var SERVER   = "leagueloom";
+  var T_POOL   = "fantasy_get_available_players";
+  var T_DRAFT  = "fantasy_get_draft";
+  var T_TEAM   = "fantasy_get_my_team";
+  var T_INFO   = "fantasy_get_league_info";
+
+  var SEASON   = 2026;
+
+  // ---- league shape -------------------------------------------------------
+  // ESPN lineup slot ids seen in this account's leagues.
+  var SLOT = { QB:"0", RB:"2", WR:"4", TE:"6", DST:"16", K:"17", BENCH:"20", IR:"21", FLEX:"23" };
+
+  // Defaults until a league is read. Overwritten by fantasy_get_league_info.
+  var LEAGUE = {
+    teams: 12,
+    rounds: 16,
+    starters: { QB:1, RB:2, WR:2, TE:1, K:1, "D/ST":1 },
+    flex: 1,
+    name: null
+  };
+
+  // Flex is shared out by how often each position actually fills it in full PPR.
+  var FLEX_SHARE = { RB:5/12, WR:6/12, TE:1/12 };
+
+  // Replacement rank per position, derived from the league's own shape.
+  // 12 teams, 1 flex, standard starters reproduces RB30 / WR31 / TE14 / QB13.
+  function baselines(L){
+    var flexBodies = L.flex * L.teams;
+    return {
+      RB:     L.starters.RB * L.teams + Math.round(flexBodies * FLEX_SHARE.RB) + 1,
+      WR:     L.starters.WR * L.teams + Math.round(flexBodies * FLEX_SHARE.WR) + 1,
+      TE:     L.starters.TE * L.teams + Math.round(flexBodies * FLEX_SHARE.TE) + 1,
+      QB:     L.starters.QB * L.teams + 1,
+      K:      L.starters.K  * L.teams + 1,
+      "D/ST": L.starters["D/ST"] * L.teams + 1
+    };
+  }
+
+  // ---- Sleeper support ----------------------------------------------------
+  // Sleeper cannot supply projections, so values still come from ESPN and are
+  // joined to the Sleeper pool by name. ESPN is also where the projection
+  // scoring context lives.
+  // NOTE: the connector caps `limit` at 200. Anything higher rejects with tool_error.
+  var MAX_LIMIT = 200;
+  var PROJ = { league_id:"129615399", provider:"espn", sport:"NFL",
+               season: SEASON, limit: MAX_LIMIT, sort:"projected" };
+
+  function normName(s){
+    return String(s || "")
+      .toLowerCase()
+      .replace(/[.'`’]/g, "")
+      .replace(/-/g, " ")
+      .replace(/\s+(jr|sr|ii|iii|iv|v)$/,"")
+      .replace(/\s+/g," ")
+      .trim();
+  }
+
+  function readSleeperShape(payload){
+    var pos = payload && payload.roster_positions;
+    if (!Array.isArray(pos)) return null;
+    var st = payload.settings || {};
+    var starters = { QB:0, RB:0, WR:0, TE:0, K:0, "D/ST":0 }, flex = 0, bench = 0;
+    pos.forEach(function(p){
+      if (p === "QB") starters.QB++;
+      else if (p === "RB") starters.RB++;
+      else if (p === "WR") starters.WR++;
+      else if (p === "TE") starters.TE++;
+      else if (p === "K") starters.K++;
+      else if (p === "DEF" || p === "DST") starters["D/ST"]++;
+      else if (p === "BN") bench++;
+      else if (p.indexOf("FLEX") !== -1) flex++;
+    });
+    var sc = payload.scoring_settings || {};
+    return {
+      teams:    st.num_teams || payload.total_rosters || 10,
+      // draft_rounds can be a stale leftover from the cloned league (seen: 3 on a
+      // 15-man roster). Roster size is what you actually have to fill.
+      rounds:   Math.max(pos.length, st.draft_rounds || 0),
+      starters: starters,
+      flex:     flex,
+      name:     payload.name || null,
+      status:   payload.status || null,
+      keepers:  st.max_keepers || 0,
+      rec:      typeof sc.rec === "number" ? sc.rec : null,
+      passTd:   typeof sc.pass_td === "number" ? sc.pass_td : null
+    };
+  }
+
+  // A Sleeper league cloned from last season keeps the OLD rosters attached until it
+  // drafts. The pool then hides players who are really still available. Detect it from
+  // the league status plus a non-zero rostered count.
+  function poolIsCarryover(shape, poolPayload){
+    if (!shape || shape.status !== "pre_draft") return false;
+    var r = poolPayload && poolPayload.rostered;
+    return typeof r === "number" && r > 0;
+  }
+
+  // Join a Sleeper availability list to ESPN projections.
+  function mergeSleeper(sleeperPlayers, espnPlayers){
+    var proj = {};
+    (espnPlayers || []).forEach(function(row){
+      var p = row && row.player; if (!p || !p.name) return;
+      var v = typeof row.projected === "number" ? row.projected : 0;
+      var k = normName(p.name);
+      if (!proj[k] || v > proj[k]) proj[k] = v;
+    });
+    var out = [], hit = 0, miss = [];
+    (sleeperPlayers || []).forEach(function(row){
+      var p = row && row.player; if (!p || !p.name) return;
+      var pos = p.position === "DEF" ? "D/ST" : p.position;
+      var k = normName(p.name);
+      var v = proj[k];
+      if (typeof v === "number"){ hit++; } else { if (miss.length < 8) miss.push(p.name); v = 0; }
+      out.push({ player:{ id:p.id, name:p.name, position:pos, proTeam:p.proTeam,
+                          injuryStatus:p.injuryStatus }, projected: v });
+    });
+    return { rows: out, matched: hit, total: out.length, misses: miss };
+  }
+
+  // Scoring differences between the projection source and the target league.
+  function scoringWarning(shape){
+    if (!shape) return null;
+    var bits = [];
+    if (shape.rec !== null && shape.rec !== 1){
+      bits.push("this league pays <strong>" + shape.rec + " per reception</strong> but the projections " +
+                "are scored at 1.0, so receivers and pass-catching backs are <strong>overvalued</strong> here " +
+                "by roughly half a point per catch &mdash; about 25 to 50 points across a season for a busy " +
+                "receiver, far less for a rushing back");
+    }
+    if (shape.passTd !== null && shape.passTd !== 4){
+      bits.push("passing touchdowns are worth " + shape.passTd + " here versus 4 in the projections");
+    }
+    if (!shape.starters.K){
+      bits.push("there is <strong>no kicker slot</strong>, so ignore any kicker suggestion");
+    }
+    return bits.length ? bits : null;
+  }
+
+  // ---- reception scoring adjustment ---------------------------------------
+  // The analyst boards are built for FULL PPR (1.0 per catch). When a league pays
+  // something else, receivers and pass-catching backs are mis-valued relative to
+  // rushers and quarterbacks. No provider exposes per-stat projections, so catches
+  // are ESTIMATED from position and positional rank, with hand overrides where the
+  // band is obviously wrong (pure rushers, receiving specialists).
+  var CATCH_BAND = {
+    WR: [[12, 95], [24, 78], [36, 62], [999, 48]],
+    TE: [[6, 78], [12, 58], [999, 42]],
+    RB: [[12, 48], [24, 32], [999, 22]],
+    QB: [[999, 0]], K: [[999, 0]], "D/ST": [[999, 0]]
+  };
+
+  // Players whose real receiving volume is far from their positional band.
+  var CATCH_OVERRIDE = {
+    "Derrick Henry": 15, "Ashton Jeanty": 30, "Kenneth Walker III": 28,
+    "Chase Brown": 40, "Javonte Williams": 28, "Quinshon Judkins": 22,
+    "Bhayshul Tuten": 18, "Jadarian Price": 18, "Tyler Allgeier": 12,
+    "Braelon Allen": 14, "Jordan Mason": 14, "Rico Dowdle": 20,
+    "Christian McCaffrey": 82, "Jahmyr Gibbs": 62, "De'Von Achane": 72,
+    "Breece Hall": 52, "Travis Etienne Jr.": 45, "Rachaad White": 50,
+    "Kenny Gainwell": 45, "Jaylen Warren": 42, "RJ Harvey": 40,
+    "Jacory Croskey-Merritt": 30, "James Cook III": 40,
+    "Amon-Ra St. Brown": 112, "Puka Nacua": 105, "Ladd McConkey": 88,
+    "Jayden Reed": 62, "Wan'Dale Robinson": 80, "Josh Downs": 72,
+    "Trey McBride": 95, "Brock Bowers": 100, "Dallas Goedert": 62,
+    "Zay Flowers": 82, "Chris Godwin Jr.": 78, "DK Metcalf": 62,
+    "Mike Evans": 62, "Courtland Sutton": 58, "Jameson Williams": 55,
+    "Brian Thomas Jr.": 62, "Marvin Harrison Jr.": 68
+  };
+
+  function estCatches(pos, posRank, name){
+    if (CATCH_OVERRIDE.hasOwnProperty(name)) return CATCH_OVERRIDE[name];
+    var bands = CATCH_BAND[pos];
+    if (!bands) return 0;
+    for (var i = 0; i < bands.length; i++){
+      if (posRank <= bands[i][0]) return bands[i][1];
+    }
+    return bands[bands.length - 1][1];
+  }
+
+  // How much this league's reception value moves a player RELATIVE to the
+  // replacement player at his own position. Positive = helped, negative = hurt.
+  function receptionDelta(pl, recValue, replRank){
+    if (recValue === null || recValue === 1) return 0;
+    var diff = recValue - 1;                       // e.g. -0.5 in half PPR
+    var mine = estCatches(pl.pos, pl.posRank, pl.name) * diff;
+    var repl = estCatches(pl.pos, replRank, "")   * diff;
+    return mine - repl;
+  }
+
+  function applyScoring(board, recValue){
+    var ranks = baselines(LEAGUE);
+    board.all.forEach(function(pl){
+      pl.recAdj = receptionDelta(pl, recValue, ranks[pl.pos] || 999);
+    });
+    return board;
+  }
+
+  function adjBadge(v){
+    if (!v || Math.abs(v) < 4) return "";
+    var up = v > 0;
+    return '<span class="badge b-' + (up ? "up" : "down") + '">' +
+           (up ? "▲" : "▼") + " " + (up ? "+" : "") + Math.round(v) + "</span>";
+  }
+
+  // Snake: odd rounds run forward, even rounds run back.
+  function myPicks(teams, slot, rounds){
+    var out = [];
+    for (var r = 1; r <= rounds; r++){
+      var inRound = (r % 2 === 1) ? slot : (teams - slot + 1);
+      out.push({ round: r, slot: inRound, overall: (r - 1) * teams + inRound });
+    }
+    return out;
+  }
+
+  function readLeagueShape(payload){
+    var st = payload && payload.settings;
+    if (!st) return null;
+    var counts = st.rosterSettings && st.rosterSettings.lineupSlotCounts;
+    if (!counts) return null;
+    var n = function(id){ var v = counts[id]; return typeof v === "number" ? v : 0; };
+    var starters = { QB:n(SLOT.QB), RB:n(SLOT.RB), WR:n(SLOT.WR),
+                     TE:n(SLOT.TE), K:n(SLOT.K), "D/ST":n(SLOT.DST) };
+    var bench = n(SLOT.BENCH), flex = n(SLOT.FLEX);
+    var perTeam = starters.QB + starters.RB + starters.WR + starters.TE +
+                  starters.K + starters["D/ST"] + flex + bench;
+    // ESPN encodes receptions as scoring stat id 53.
+    var rec = null;
+    var items = (st.scoringSettings && st.scoringSettings.scoringItems) || [];
+    for (var k = 0; k < items.length; k++){
+      if (items[k] && items[k].statId === 53){ rec = items[k].points; break; }
+    }
+    return {
+      rec: rec,
+      teams: st.size || 12,
+      rounds: perTeam || 16,
+      starters: starters,
+      flex: flex,
+      name: st.name || null
+    };
+  }
+
+  // Per-round targets. Slot-independent: only the pick numbers move with your slot.
+  // Confirmed slot for the ESPN league is 12, where every turn is back-to-back
+  // (12/13, 36/37, ...) with 22-23 picks between pairs.
+  var PLAN = {
+    1:{pos:["RB","WR"], say:"Best available back or receiver from the top tiers."},
+    2:{pos:["RB","TE","WR"], say:"Your first back — unless an elite tight end fell."},
+    3:{pos:["WR","RB","TE"], say:"Receiver tier 6, or Warren / Loveland at tight end."},
+    4:{pos:["RB","WR","TE"], say:"Best skill player. Not a quarterback — Kyler waits at 9.108."},
+    5:{pos:["TE","WR","RB"], say:"Tight end tier 3, or receiver tier 8."},
+    6:{pos:["WR","RB","TE","QB"], say:"Last backs with standalone value. Hurts here if you want the safe quarterback."},
+    7:{pos:["WR","RB"], say:"Upside. The question is now who inherits a job."},
+    8:{pos:["WR","RB","QB"], say:"QUENTIN JOHNSTON — Mason's named arbitrage against McConkey. Or Jordyn Tyson, IR slot only; Makai Lemon is a double-digit-round stash, not here."},
+    9:{pos:["QB","RB","WR"], say:"KYLER MURRAY at 108. Both picks of this turn are yours, so the insurance is free — and his ADP is rising now Minnesota is settled."},
+    10:{pos:["WR","RB","QB"], say:"Jordan Addison — Mason 82nd, Sal 85th, ADP ~109. Take Kyler here instead if he somehow lasted."},
+    11:{pos:["RB","WR"], say:"CHUBA HUBBARD — both analysts now prefer him to Brooks, and he is the cleaner bet than MarShawn Lloyd, who Sal put on his sell list. Then Diggs or Golden."},
+    12:{pos:["RB","WR"], say:"Keep taking players with a path to touches."},
+    13:{pos:["QB","RB"], say:"Backup quarterback, then handcuffs."},
+    14:{pos:["RB"], say:"Handcuff backs only — Keaton Mitchell, Mike Washington, Woody Marks. Never a receiver this late."},
+    15:{pos:["RB","WR"], say:"Upside only. Backs who are one injury from starting."},
+    16:{pos:["RB","WR"], say:"Last dart. Take the highest ceiling left."}
+  };
+
+  // Consensus board: name -> [rank(x10), pos, tier, note, contested, masonRank, salRank].
+  // CONTESTED means the two analysts genuinely disagree. Recency does not settle those.
+  var BOARD = {
+    "Jahmyr Gibbs":[10,"RB","S","Consensus 1.01 on both boards.",0,"1","1"],
+    "Bijan Robinson":[20,"RB","S","Consensus 1.02 on both boards.",0,"2","2"],
+    "Ja'Marr Chase":[30,"WR","S","KNEE SCARE CLOSED. Mason's final board on Sep 6 has him WR1 and 3rd overall, with reports saying he is good to go for week one alongside Tee Higgins. Sal's hyperextension report is now the stale one, and this is an EVENT, so the newer word governs. A fully healthy Burrow and Chase produced 23 ppg.",0,"3","4"],
+    "Jaxon Smith-Njigba":[50,"WR","S","Slips to 5th on Mason's final board, behind Nacua again after the reversal. Seattle lost its offensive coordinator and projects as a worse offense, but he took over 30% of the target share last year — the floor is the whole case, and Mason would be ecstatic to have him.",0,"5","6"],
+    "Puka Nacua":[40,"WR","S","CONTEST OVER — MASON REVERSED HIMSELF. On his final receiver board he reads the Sep 1 New York Post story as non-incriminating, argues a suspension would already have landed, notes the league wants its star for the Australia game, and moves him back to WR2 now that he is practising again. Sal never left him. Both now have him top four. 23.5 ppg last season.",0,"4","3"],
+    "Christian McCaffrey":[60,"RB","A","Mason takes CMC over Taylor in full PPR — this league. Every San Francisco receiver is hurt, so Mason expects them to go back to 7-9 targets a game for him, the way they did last year until the wheels fell off. 24.5 ppg last season is the highest mark of any player. The floor is low: 400+ touches at 30-plus.",0,"6","5"],
+    "Jonathan Taylor":[70,"RB","A","Mason's own RB1 for his team, and he says take Taylor over CMC only in a NON-PPR league. Daniel Jones is back with zero limitations. Through the first 10 weeks last year, before Jones got hurt, JT was the best player in fantasy by a country mile. Only 3.2 targets a game.",0,"7","7"],
+    "Amon-Ra St. Brown":[80,"WR","A","Safest pick in round one on both boards.",0,"8","8"],
+    "CeeDee Lamb":[90,"WR","A","Fully healthy, zero limitations.",0,"9","9"],
+    "Justin Jefferson":[100,"WR","A","Mason traded for him. Kyler removes the McCarthy curse.",0,"10","12"],
+    "James Cook III":[110,"RB","B","Mason RB5, 11th overall, and the no-question-marks pick of the tier: back-to-back top-12 finishes, 17.8 ppg, no competition in the backfield, a great line, and he suits up every week. The cap is that he does not catch the ball like Gibbs, Bijan or CMC, and Josh Allen steals rushing scores.",0,"11","10"],
+    "De'Von Achane":[120,"RB","B","Mason RB7, 13th overall, and an S-tier talent in his prime stuck in a train-wreck offense — Miami will have too many three-and-outs, and the quarterback neither runs nor checks down. 20 ppg last year. Mason calls him a late first or early second, and says the red flags are over-priced in.",0,"13",""],
+    "Ashton Jeanty":[175,"RB","B","MASON UPDATED HIMSELF TWICE IN THREE DAYS. Sep 3: not practising in full, needs a discount, take Walker first. Sep 6: a damn good chance he is ready for week one, and the Raiders are the most improved offense in the league year over year — better quarterback room, line and staff. He still lands him just BEHIND Walker at 17th. Before the ankle Mason had him a borderline top-six back. Sal's two-games-missed guess is now the oldest read on this name.",0,"17","24"],
+    "Chase Brown":[140,"RB","B","CONSENSUS BUY, RESTATED. Mason RB6 and 12th overall: a three-down bellcow who has been elite in every game Burrow has played over two seasons, Burrow is fully healthy now, and there is no depth behind him — he could see 400 touches. Sal has him RB7 and a borderline first-rounder.",0,"12","13"],
+    "Saquon Barkley":[150,"RB","B","Mason RB8, 14th overall. Only 14.5 ppg last season and Mason owned the wreckage, but the books project Philadelphia as a better scoring offense this year on the offensive-coordinator change. The bounce-back case is the whole argument.",0,"14","11"],
+    "Derrick Henry":[190,"RB","B","Mason RB12, 18th overall, and the fade is explicit in FULL PPR: he does not catch the ball, he turns 33 this season, and not one of the historical age-31 comps — Lynch, Gore, Forte, LT, Steven Jackson, Hall of Famers included — cleared 15 ppg the following year. Two good games last year. Mason wants him at the END of round two, not the start. Move him up in non-PPR.",0,"18",""],
+    "Kenneth Walker III":[170,"RB","B","STILL CONTESTED. MASON, RB10 and 16th: probably his best fantasy season ever, because Kansas City gives him a bigger workload than Seattle did even in a worse offense — but Mason still will not draft him, because his carries per game have fallen every single year and Seattle let him walk. He traded Walker for Jefferson and says you should too. SAL, RB11: a genuine workhorse for KC.",1,"16","18"],
+    "Omarion Hampton":[180,"RB","B","Mason RB9, 15th overall: he checked every prospect box — size for three downs, athleticism, receiving, round-one capital — and Mason now grades the Chargers line as a borderline TOP-10 unit after it was the worst in the NFL last year. WATCH THIS: Sal says the opposite, that the line got WORSE in camp with the centre hurt. The two disagree on a fact that also drives McConkey and Johnston.",0,"15",""],
+    "Drake London":[215,"WR","B","NEWLY CONTESTED, AND BOTH ARE DOWN. MASON drops him under A.J. Brown to WR8: the Atlanta reports say Tua looks horrendous, so it is Michael Penix, and Mason does not love Penix for London. SAL GOES MUCH FURTHER and puts him on his SELL list — he would trade London straight up for Pickens, for A.J. Brown, or for Jefferson, and warns that a bottom-five offense craters a second-round pick to fifth-round value, the way Arizona did to its skill players. Same facts, Sal is a full tier lower.",1,"20",""],
+    "Malik Nabers":[205,"WR","B","CONSENSUS UP, WITH A HEALTH DISCOUNT. SAL says flatly he plays week one: practising for a month, the non-contact jersey came off three weeks out, and the non-committal quote is the team wanting to announce it, not doubt. Wan'Dale is gone, so he is the clear first read for Dart against only Slayton and Mooney. He would take Nabers over Pickens, London, Flowers and McMillan, and calls Nico a wash. MASON, WR10: at full health he belongs between JSN and St. Brown, but take the discount, because a lingering injury into week six is the downside.",0,"23",""],
+    "A.J. Brown":[200,"WR","B","MASON MOVED HIM ABOVE LONDON, having had it the other way round. The New England reports on him have been phenomenal all camp — Sal calls it wheels up. WR7 and 19th overall.",0,"19","13"],
+    "Nico Collins":[225,"WR","B","Mason WR9 and 22nd overall — steady Eddie, and the room emptied out around him: Tank Dell and Jayden Higgins both hit IR, and the Kahan Boutte trade is not real competition. Sal calls Nabers-versus-Nico a wash right now.",0,"22","14"],
+    "Travis Etienne Jr.":[230,"RB","C","THE STRONGEST CONSENSUS BUY ON THE BOARD, RESTATED BY BOTH THIS WEEK. The backfield behind him has collapsed: Kamara has a sprained MCL and misses at least a month, at 31, with the same injury for the third time; Devin Neal and Ty Chandler are on season-ending IR; only Kendre Miller and Audric Estime are left and both are hurt. MASON: 32nd overall and RB17, higher than anyone else has him, and his league-mates accuse him of homerism for it. SAL: a top-30 player worth a third-round pick, and Kellen Moore runs 1,075-1,116 plays a season, well above league-average pace. Sal's regret is passing him at the 4-5 turn.",0,"32","30"],
+    "Trey McBride":[248,"TE","C","STILL THE SHARPEST SPLIT. MASON, 24th, restated in full: McBride will be worse this year — Arizona runs more with Jeremiyah Love and Allgeier, the offense is worse overall, and Marvin Harrison is healthy — AND he is still worth it, because 18.6 ppg last season beat Nico, Nabers, London, Brown, Henry, Jeanty, Walker, Hampton, Barkley, Chase Brown, Cook, Jefferson and Lamb. SAL, 31st and out. Same three facts, opposite conclusions.",1,"24","31"],
+    "Brock Bowers":[245,"TE","C","MASON RESTATED THE FORMAT RULE ON HIS FINAL BOARD, unprompted: in a league where you start only two receivers and one flex, take Bowers OVER these receivers — a full tier up. His published order assumes full PPR with a DOUBLE flex, so check the ESPN slot count before you apply it. The offense should be much better and he has no receiver competition at all. WR-proof TE1.",0,"21","23"],
+    "George Pickens":[260,"WR","C","Mason WR11 and 25th: an absolute stud in a phenomenal offense, but he gets slightly worse year over year because CeeDee Lamb is healthy again and Mason still assumes Lamb is the WR1 in Dallas on the long-term record. Sal would trade Drake London for him straight up.",0,"25",""],
+    "Rashee Rice":[265,"WR","C","CONSENSUS BUY, BOTH EXPLICIT THIS WEEK. SAL calls him a slam-dunk third-rounder: he LED THE NFL with a 46.2% red-zone target share and a 55% designed-target rate, the books have his reception prop at 95.5-99.5, Mahomes is ready for week one and may lean shorter coming off the knee. The sluggish-looking clips are half-speed camp reps — he never separated last year either and was still a top-five receiver in points per game. MASON, WR12: the Chiefs throw more than the public thinks, and Rice has no target competition at 9.8 targets a game — while conceding he is the least talented receiver in that top twelve. Knee procedure and the jail month are the risk.",0,"26",""],
+    "Chris Olave":[275,"WR","C","BOTH UP ON THE SAME EVENT. Jordyn Tyson is on IR and misses AT LEAST the first four weeks — Mason reads the two-months quote from its reporting date, so week five at the earliest and possibly week nine after the week-eight bye. MASON: he will be a top-10 name in the week-one rankings, a third-round price is an absolute smash and the second is acceptable. SAL ranks him above Ladd McConkey. He used to be a C-tier name for Mason.",0,"27",""],
+    "Javonte Williams":[315,"RB","C","Mason RB16, 31st: he does not think Javonte is especially talented, and says so, but there is no competition — the scariest name behind him is Malik Davis — Dallas projects as a very good offense, and he catches the ball. Same argument shape as Etienne: situation over talent.",0,"31",""],
+    "Josh Jacobs":[1100,"RB","I","IR-STASH ONLY — AND THE PICTURE MOVED AGAIN IN THE LAST 48 HOURS. SAL, Sep 3-6: the Commissioner Exempt precedents are brutal — Peterson and Hardy each sat 15 games, Foster and Hunt five, Peppers seven — so five games is the floor, the court date is November, and if the video surfaces Green Bay may simply release him. MASON, Sep 6: Jacobs MOVED HIS HEARING DATE UP and now it looks like maybe he is not suspended, and Mason says frankly that he does not know. MASON'S RULE: if you cannot put him on IR, do not take him — let him go to waivers or let a league-mate have him. Both of Chris's leagues have an IR slot, Chicago has two.",0,"83",""],
+    "Kyren Williams":[310,"RB","C","MASON PUSHED BACK ON THE CORUM PANIC: he will believe it is Corum's backfield when he sees it, Kyren has been a top-12 back in points per game in each of the last three seasons, he keeps the receiving role, and the Rams project as the BEST offense in the league this year. RB15, 30th overall.",0,"30","32"],
+    "DeVonta Smith":[320,"WR","C","Set up by the A.J. Brown trade, but low team volume.",0,"18",""],
+    "Tee Higgins":[330,"WR","C","Mason: buy at the end of the third or start of the fourth. WR13 in games with Burrow, WR28 in the 14 starts without him. Same profile as George Pickens, who costs a round more.",0,"","33"],
+    "Jaylen Waddle":[340,"WR","C","SAL'S SINGLE BEST PICK. Clear number one in Denver.",0,"21",""],
+    "Zay Flowers":[350,"WR","C","Better every year, efficiency climbing.",0,"20",""],
+    "Jeremiyah Love":[300,"RB","C","MASON: DRAFT HIM FOR THE BACK HALF, NOT FOR WEEK ONE. The last report has him 50-50 for week one with a high ankle sprain, and Mason's warning is explicit — if you take him, do not panic-trade him in week five while he splits with Allgeier and ramps up. He may be a low RB2 in Mason's week-two ranks. RB14 and 29th on talent alone; the Cardinals project as the worst offense in the league.",0,"29","36"],
+    "Colston Loveland":[365,"TE","D","RISING — TE3 off the board at ADP 39. Played 89% of Bears snaps in preseason WITH Cole Kmet healthy, which kills the \"he only broke out because Kmet was hurt\" worry. Solid in round four.",0,"27",""],
+    "Breece Hall":[285,"RB","C","REVERSED — THE GROIN IS A NON-EVENT. SAL: minor, two to three weeks, on track for week one, a physio said publicly not to fade him over it, and he is being sold at fifth- and sixth-round value when Sal has him a top-25 player worth a third. The Jets extended him three years and $45M and refused to trade him when everything else was available. MASON: sounds good to go, RB13, and a phenomenal receiving back now that Gino Smith will actually check down — 1,400 total yards and 36 catches last year in the league's worst passing offense, held back only by five touchdowns.",0,"28","25"],
+    "Tetairoa McMillan":[380,"WR","D","Mason's regret from his own draft. Only Nabers, Harrison, Chase and Lamb graded better on the FSE prospect model since 2016. He calls him discount Drake London, two rounds cheaper, and would take him in the fourth without hesitating.",0,"","41"],
+    "Emeka Egbuka":[390,"WR","D","Toe injury. Mason drafted him over McMillan and says he regrets it. Chris Godwin is the direct beneficiary.",0,"","-"],
+    "D'Andre Swift":[400,"RB","D","THE STRONGEST CONSENSUS BUY AT THE POSITION, AND MASON NOW RANKS HIM AHEAD OF SKATTEBO. Kyle Monangai's hyperextended knee is still week-to-week and may keep him out until weeks three to five, so Swift is a bellcow early and at low risk of losing the job. Mason: very clearly the back you take in round four if the tier above does not fall, and he sits in his own little tier above Montgomery. Swift's own injury scare turned out to be a cramp and a nothing-burger. 1,400 total yards and 10 TDs last year.",0,"42","40"],
+    "Garrett Wilson":[405,"WR","D","CONTESTED, AND NOW ON A FACT, NOT A JUDGEMENT. SAL BUYS at 34th, ten spots ahead of market, and says flatly that he has NO TARGET COMPETITION. MASON fades at 41st and names TWO added receivers, Omar Cooper and Kenyan Sadi. Both cannot be right. Verify the Jets receiver room before you draft him.",1,"41","34"],
+    "Ladd McConkey":[410,"WR","D","CONTEST FLIPPED — SAL IS NOW THE BUYER. SAL will pay a third- or fourth-round price and takes him OVER Tee Higgins and Tetairoa McMillan: Keenan Allen's 120-plus targets are gone with no real replacement, he averaged 17.5 ppg across weeks 5-10 when he and Herbert were both healthy, and the beat writers say Mike McDaniel's staff are using him the way Miami used Tyreek Hill. Sal thinks he is a second-round player in rest-of-season ranks after one good week-one game. MASON is unmoved at WR20 and still says take Quentin Johnston in the eighth instead — one month older, better last year. NOTE THE FACT CONFLICT: Mason grades the Chargers line borderline top-10, Sal says it got worse in camp.",1,"40","39"],
+    "Tyler Warren":[468,"TE","D","BOTH NOW FADE HIM AT COST. Sal, 65th: it has gotten away from me at an ADP of 50, and he would rather have the receivers going in that range. Mason, 59th: would have him higher if not for the Keenan signing. Nobody is paying a round-3 or round-4 price any more.",0,"59","65"],
+    "Dallas Goedert":[445,"TE","G","SAL'S BEST LATE PICK — led ALL tight ends with 11 TDs last year, A.J. Brown gone, only competition is a struggling rookie. Best chance in the double-digit rounds to score 10 TDs at any non-QB position.",0,"",""],
+    "Quinshon Judkins":[450,"RB","D","MASON RATES THE PLAYER AND HATES THE SITUATION, explicitly: if Judkins were on the Rams or the Cowboys he would sit alongside Achane, Barkley and Hampton. He is not — the Browns line is garbage, the quarterback play is garbage, they project bottom-three in the league, he is coming off a significant injury, and he is not a receiving back either. RB20.",0,"",""],
+    "Bucky Irving":[460,"RB","D","MASON MOVED HIM DOWN, AND NAMES THE SQUEEZE FROM BOTH ENDS: Kenneth Gainwell arrives and should take receiving work, and Sean Tucker restructured to stay in Tampa and may take goal-line carries — leaving Bucky as a between-the-20s back in a three-way committee, which may genuinely be the smart plan for a smaller back with last year's injury history. AND YET Mason still calls him the HIGHEST-CEILING back in this group: if they use him like Kamara he has real upside. RB21. Low floor, high ceiling.",0,"",""],
+    "Davante Adams":[470,"WR","D","STILL THE PUKA HEDGE — BUT THE HEDGE IS NOW WORTH LESS. Mason repeats that if Nacua missed time Adams would be a top-five receiver and he would rank him fifth in his week-one ranks. The problem is that Mason has now talked himself OUT of the suspension, so the scenario you are paying for is thinner than it was a week ago. WR22 and 48th overall, 15.9 ppg last year, 33 years old, and he ran extremely hot on touchdowns. Sal would take him over Parker Washington.",0,"48","50"],
+    "Jameson Williams":[480,"WR","D","CONSENSUS. Mason drafted him and calls round 5 incredible: WR61 through five weeks, then WR15 from week 6 once Dan Campbell took over playcalling. Sal, 52nd, is about a round ahead of market.",0,"","52"],
+    "Cam Skattebo":[505,"RB","E","BOTH FADE HARDER, WITH THREE NEW FACTS. The Giants signed Najee Harris; Harbaugh said word for word that Skattebo is not 100%; and a retirement-consideration post surfaced on the day Mason recorded. MASON has now moved him BELOW D'Andre Swift to a late-fourth or early-fifth price and says he cannot close his eyes to signing Najee the same day — but calls him an absolute smash in the fifth, because he was a monster when healthy. SAL wants him traded away: Najee takes eight carries a game, cutting Skattebo from 16 to 10-12, and Tyrone Tracy averaged 99 total yards a game down the stretch last year.",0,"50","46"],
+    "Bhayshul Tuten":[500,"RB","E","MASON COOLED SLIGHTLY. Etienne's departure leaves a big role to take, but the word is he may split with Chris Rodriguez, and Mason's rule is that a round-four pick who did NOT hit as a rookie does not get moved up — Tuten averaged 5.9 ppg. Rodriguez is the worst pass-catching back Mason can name, which caps Rodriguez's ceiling and protects Tuten's receiving work. RB24.",0,"",""],
+    "David Montgomery":[585,"RB","E","BOTH STILL DOWN, AND MASON IS CLEAR ABOUT THE SHAPE: you will never draft Montgomery and find you cannot start him in week six — he is startable, he just has no ceiling. Not an elite receiving back, no big-play touchdowns, and Houston's line is an unknown. Mason says Swift is much more appealing and sits in his own tier above him. Sal: no upside, shaky floor, and Woody Marks is pushing a 50-50 split. RB19.",0,"45","69"],
+    "Terry McLaurin":[520,"WR","E","CONTEST RESOLVED TOWARD MASON — BY SAL. Sal's own newest video confirms the fact Mason was reasoning from: Laremy Tunsil is out, and it has now been updated to the ENTIRE SEASON. Sal says on the record that he feels worse about having drafted McLaurin because of it. MASON, WR26: in line for a bounce-back, but he is 31, he was WR36 last year, and every report out of Washington is about the line being garbage and him not having time to get downfield. This is a fade now, not a split.",0,"53","42"],
+    "Jadarian Price":[530,"RB","E","NEW CONCERN, AND MASON ONLY HALF-BELIEVES IT. A Seattle beat reporter compared his likely role to what TreVeyon Henderson gave New England last year, with George Holani taking third downs, short yardage and the goal line — which is all the valuable work. Mason does not buy it one-for-one, because Price went in round one and he rates the talent, but says plainly that if you take Price you are probably not starting him in week one until the role is clear. RB23.",0,"","58"],
+    "Luther Burden III":[540,"WR","E","Back at practice with two-plus weeks to recover and trending to play week one, and he has been falling in drafts, which Sal calls a great spot to buy at 49th. Mason has real reservations: elite yards per route run, but he could not beat out Zaccheaus for snaps.",0,"54","49"],
+    "Mike Evans":[550,"WR","E","STILL CONTESTED, BUT THE ROOM AROUND HIM IS EMPTY. New facts: Ricky Pearsall is out for the season, Christian Kirk is on IR, and GM John Lynch said on Sep 1 that he hopes Evans returns to practice the following week — with San Francisco playing THURSDAY, week one is genuinely live. SAL is buying in round six: the clear WR1 and the number one red-zone option, and his theory is a 12-year veteran with five months in the building skipping camp reps he does not need. Ceiling case is Davante Adams' age-33 season — 115-120 targets and 8-10 TDs. MASON, WR29: he simply has not been able to stay healthy, and every camp report has been about an injury. Coin-flip.",1,"58","51"],
+    "Rome Odunze":[560,"WR","E","Two seasons of disappointment; Burden passed him.",0,"33",""],
+    "Sam LaPorta":[570,"TE","E","Hip injury. Safer than Kraft, lower ceiling.",0,"34",""],
+    "Rhamondre Stevenson":[545,"RB","F","CONSENSUS, AND MASON OFFICIALLY FLIPPED HIM ABOVE HENDERSON. Both confirm independently that Henderson has not practised since Aug 24 — Mason checked again on Sep 6, the day before the opener. MASON: a massive riser, already getting the positive buzz as the starter, and if Henderson misses week one Rhamondre cements the job; the ceiling stays capped. SAL is buying: he was always the RB1, he held the job through the postseason and the Super Bowl, he is 230lbs, he pass-protects better, he scored nine TDs last year, and New England added A.J. Brown and Romeo Doubs. ADP still has him going a round BEHIND Henderson, which Sal calls senseless. Mason's biggest regret from the Flock draft was taking Drake Maye ahead of him.",0,"60","67"],
+    "TreVeyon Henderson":[605,"RB","F","FELL — TEN-PLUS DAYS WITHOUT PRACTICE, CONFIRMED BY BOTH. No practice since Aug 24, still absent on Sep 6, with week one on a Wednesday-Thursday opener. Mason still says he is the more talented back with the juice and the higher ceiling, but it does not matter if he cannot pass-protect or get on the field. Draft him as the upside half of the New England pair, never as the starter.",0,"61","59"],
+    "Christian Watson":[600,"WR","F","CONSENSUS BUY WITH ONE NEW WRINKLE. MASON has him WR23, calls the ranking conservative, and is the highest on him anywhere: WR19 in points per game last year on a short ACL runway, with Doubs and Wicks now gone giving him more snaps, routes and targets. THE WRINKLE: on his Sep 6 board Mason slid Watson down a little because it now looks like Jacobs may play after all, which would make Green Bay less pass-happy. That is the same unresolved Jacobs uncertainty flagged on his own entry. Sal, 60th, likes the pace and volume.",0,"","60"],
+    "Kyle Pitts Sr.":[610,"TE","F","SOUNDS LIKE A SPLIT, IS NOT. Sal has him 96th against an ADP of 76 and hates the Atlanta offense. Mason calls him a value in ROUNDS 9 TO 11, which is roughly pick 100 to 130. Both are saying the same thing: do not pay 76, happy around 100. Mason's case: TE5 in points per game last year at 12.4, still only 25, and 36M guaranteed against Kenneth Walker's 28M.",0,"","96"],
+    "Harold Fannin Jr.":[620,"TE","F","SAL'S BIGGEST BET AGAINST THIS YEAR, three rounds below market at 98th against an ADP of 70. Terrible offense and quarterback, and now Boutte and Casey Conpion absorb the designed touches he lived on. Mason still keeps him in the tier just ahead of streamers. Lean Sal, who names the mechanism.",1,"","98"],
+    "Tucker Kraft":[630,"TE","F","Limited early, dominant later. Draft a second TE.",0,"37",""],
+    "Carnell Tate":[640,"WR","F","CONSENSUS BUY, BOTH RESTATED, AND SAL'S HEADLINE BUY-LOW. SAL: the preseason panic is noise — zero catches on six targets across two or three quarters, and Harrison, McMillan, Hunter, Chase and DeVonta Smith all did nothing in their preseasons; in joint practices against the Bears he went 7 of 12 for two touchdowns, he is moving into the slot, and Daboll historically feeds one receiver 140-170 targets. He would trade Dowdle, Kelce, Pittman, Harvey or Stribling to get him. MASON, WR30: the cheapest top-five NFL draft pick he has seen in years in fantasy, but he loves the player and hates the offense, and warns the rookie may start slow. Sixth round, sometimes the seventh.",0,"61",""],
+    "Brian Thomas Jr.":[650,"WR","F","MASON HOLDS HIM ABOVE PARKER WASHINGTON AND EXPLAINS WHY. He knows high-stakes drafters take Washington three rounds earlier and says he is stuck in his ways: Thomas is younger at 23, and averaged over the 2024-25 sample he beats Washington in every major category. Sal agrees Thomas is due a bounce-back in year two of the Leon Con offense after the wrist injury. WR31.",0,"65",""],
+    "DJ Moore":[660,"WR","F","FADED — WR46 last year, turning 30, Buffalo spreads it thin.",0,"37",""],
+    "Jonathon Brooks":[745,"RB","H","BOTH FADE HIM HARDER, AND HUBBARD IS NOW AHEAD. New fact: Brooks sat out practice with unspecified soreness a week before the season, in the knee he has torn twice — Mason's read is that refusing to name the location is how you say knee. MASON: he and Hubbard would be flipped if not for the hamstring, and that hamstring has healed. SAL: no running back in NFL history has come back from consecutive ACL tears, Hubbard leads this backfield, and week one may be eight carries each; he calls a sixth-to-eighth round price indefensible. Carolina was bottom-10 in scoring and will see stacked boxes.",0,"70","77"],
+    "Marvin Harrison Jr.":[680,"WR","F","Great talent, bad offense, third in the target queue.",0,"38",""],
+    "George Kittle":[690,"TE","F","ESPN's OUT flag is stale — news has improved.",0,"38",""],
+    "Jordan Addison":[700,"WR","G","THE CHEAPEST CONVERGENCE ON THE BOARD. Both boards land within three spots of each other, Mason 82nd and Sal 85th, against an ADP near 109. Same argument as Jefferson: the McCarthy games are noise, and Kyler removes him. WR25 without McCarthy, WR66 with. Still 24, a former first-rounder and Biletnikoff winner.",0,"82","85"],
+    "Quentin Johnston":[710,"WR","G","CONSENSUS BUY, AND THE CLEANEST POSITIONAL ARBITRAGE ON THE BOARD, restated on Mason's final board: do not take Ladd McConkey in the third when you can have Johnston around the eighth. Johnston is one month older, had more fantasy points per game last year, and everything helping McConkey — no Keenan Allen, better staff, better line — helps Johnston identically. Mason WR37. Sal has him a full round ahead of consensus but now prefers McConkey outright.",0,"","93"],
+    "Mark Andrews":[720,"TE","G","",0,"39",""],
+    "Jake Ferguson":[730,"TE","G","",0,"40",""],
+    "RJ Harvey":[740,"RB","G","MASON WANTS TO RANK HIM HIGHER AND CANNOT. He still thinks Dobbins gets hurt — Dobbins has missed at least five games every year for five years — and Harvey is the back who catches the ball. The blocker is Jonah Coleman, who is getting every positive blurb out of Denver and whom this staff clearly love; if Dobbins goes down, Coleman may replace him one-for-one instead. RB30. Sal is cooler still at RB37.",0,"89","90"],
+    "Parker Washington":[745,"WR","G","SAL REVERSED HIMSELF — HE IS NOW ON SAL'S SELL LIST. Sal still calls him the best receiver in the Jacksonville offense and praises the work ethic, but says the hype has driven him from an eighth-round pick to a fifth or sixth, the trade market is red hot, and if either Brian Thomas or Jakobi Meyers is hurt the extra work goes to Travis Hunter, not to him. He would take Davante Adams or Rome Odunze instead. MASON never moved: WR32, behind Brian Thomas, who stomps him in every category over the two-year sample. Both now say the same thing — good player, wrong price.",0,"66",""],
+    "DK Metcalf":[760,"WR","G","NOW CONTESTED. SAL calls him a slam dunk at 68th and his biggest round-6 difference: his average depth of target collapsed to 10.5 yards, 58th in the NFL, because Pittsburgh had no underneath game, and Rodgers with McCarthy sends him back downfield. MASON has him 76th and lower because Pittman adds target competition.",1,"76","68"],
+    "Makai Lemon":[770,"WR","G","MASON: A STASH, NOT A WEEK-ONE STARTER. He has him WR38 and is explicit about the shape of the pick — take him in the DOUBLE-DIGIT rounds, sit on him, hope he works into two-receiver sets for Philadelphia, and expect the break-out around week six or later. A damn good chance you like what you get if you pay that price and wait. Do not start him early.",0,"",""],
+    "Chris Godwin Jr.":[780,"WR","G","Rises while Egbuka's toe is unresolved.",0,"44",""],
+    "Josh Downs":[785,"WR","H","SAL UNDERCUT HIS OWN BUY. In his newest video he says plainly that Alec Pierce is still the number one receiver on this team, no doubt about it, and names Tyler Warren as the number one in the passing attack and Jonathan Taylor as the number one overall. MASON agrees: he does not love Downs with Warren and Keenan Allen there, WR46. The Pierce-is-hurt argument that made Downs interesting is gone now that Pierce is practising. Treat the earlier reopened flag as closed.",0,"","83"],
+    "Rachaad White":[790,"RB","G","Mason ranks him AHEAD of MarShawn Lloyd on a clearer path to starting. Sal RB39: possibly the passing-down back in a good Commanders offense, reunited with Daniels from Arizona State. Had a 1500-yard season in 2023.",0,"","-"],
+    "Jayden Reed":[795,"WR","I","CONTRADICTION RESOLVED — HE IS ON GREEN BAY. Mason's final receiver board lists him at WR49 in the Packers section, right beside Matthew Golden, and says he may be used more with Doubs and Wicks gone. The earlier no-Jayden-Reed-in-Green-Bay line was an auto-caption error, not a fact. Sal's WR76 buy against an ADP of 113 now stands as a normal one-analyst opinion rather than a fact conflict.",0,"","76"],
+    "Michael Pittman Jr.":[800,"WR","G","Pittsburgh worse than Indy was, turns 29.",0,"45",""],
+    "Courtland Sutton":[810,"WR","G","Turning 31, far more competition with Waddle there.",0,"46",""],
+    "Stefon Diggs":[820,"WR","G","MASON REVERSED HIS OWN BATCH-1 BUY. He now has Diggs falling, 95th, given how bad the Commanders look after the Tunsil injury. Sal, 97th, is neutral: still quality even if he only plays three-receiver sets, and he was slot-only in preseason week two.",0,"95","97"],
+    "Woody Marks":[812,"RB","G","BOTH PREFER HIM TO MONTGOMERY. Sal RB44 and says he could easily be a top-30 back: he played all 10 snaps with Stroud in the preseason, turned five touches into 43 yards and a TD, and reports have him near 50-50 with Montgomery. Definitively the better pass-catcher.",0,"","-"],
+    "Tank Dell":[830,"WR","G","Higgins ACL opens the Houston WR2 role.",0,"48",""],
+    "Jordan Mason":[840,"RB","H","STILL CONTESTED, AND SAL DOUBLED DOWN WITH NUMBERS. SAL: the bellcow front-runner on every recent camp report, five yards a carry across three seasons, and 16 ppg the two times he got a featured role — 15 ppg in the four games Aaron Jones missed last year, 17 ppg over five starts in 2024. Jones is 31, isolated to pass work, and carries a run of hamstring, shoulder and hip injuries; an RB38 ADP is far too cheap for a starter. MASON, unmoved: he does seem cemented as the starter, and Mason does not know whether he is any good at football. Both agree on the flaw — he will not catch passes, 3/11/14 receptions in three years.",1,"96","89"],
+    "Jacory Croskey-Merritt":[850,"RB","H","SAL STILL BUYING CHEAP, WITH ONE NEW NEGATIVE. As a seventh-round rookie he put up 805 rushing yards and eight TDs at 4.7 yards a touch — top-25 in the NFL — on a broken offense, and Washington is trying to make him a three-down back so they do not tip the play when he leaves the field. The new problem is Laremy Tunsil out for the season. The groin is minor and he was jogging a day later, so no week-one worry. Round 9 or 10. Mason has him RB38 and still rates Rachaad White's path as the cleaner one.",0,"","87"],
+    "Blake Corum":[860,"RB","H","MASON: AN ELITE HANDCUFF, NOT A COUP. He thinks it is unlikely Corum flips Kyren on the depth chart and says so twice, but is unambiguous about the payoff — if Kyren goes down, Blake Corum wins leagues, and this is the best offense in the league. Premium handcuff pricing only. RB33.",0,"41",""],
+    "Jordyn Tyson":[870,"WR","H","Back as early as week 5, but the Saints bye in week 8 means it could be week 9. Third injury to the same right hamstring. Mason: free in the 12th, and pure upside as an IR stash. UNDRAFTABLE if you have no IR slot. Both of Chris's leagues have one, and Chicago has two.",0,"","-"],
+    "Keenan Allen":[880,"WR","H","Colts target vacuum is real. Double-digit rounds.",0,"50",""],
+    "De'Zhaun Stribling":[885,"WR","I","SAL REVERSED TO A SELL. He now calls a seventh- or eighth-round price a perfect sell-high: he is behind Mike Evans and Deebo, Kittle is expected back by week one or two, and Sal's own comp is Jauan Jennings at about four targets a game. He would trade Stribling straight up for Carnell Tate and tells you to do it immediately. MASON has him WR41 and says if your week-one lineup needs Stribling you did it wrong. The league-winning upside is real ONLY if Evans goes down.",0,"55",""],
+    "Wan'Dale Robinson":[890,"WR","H","Second fiddle to Tate with Cam Ward throwing.",0,"51",""],
+    "Alec Pierce":[950,"WR","I","STILL A FADE, BUT HE IS BACK — SOFTEN THE EARLIER UNDRAFTABLE CALL. He is off PUP and practising, and both now expect him to play week one; Sal says he will not be 100%, Mason says he should be ready around the start of the season. SAL'S SELL CASE IS THE REGRESSION, NOT THE ANKLE: 1,000 yards on 84 targets and 49th in the NFL in target share is not repeatable, he is a field-stretcher whose quarterback is coming off a torn Achilles, and Sal names Tyler Warren as the real number one in that passing attack. Mason WR43.",0,"","100"],
+    "Michael Wilson":[910,"WR","H","Third in line behind Harrison and McBride.",0,"53",""],
+    "Rico Dowdle":[920,"RB","H","MASON HAS CLOSED THE GAP TO WARREN. Dowdle has had a ton of great buzz out of Pittsburgh, has bridged the gap, and Mason names him as one of the two best picks of the entire Flock draft at 9.03 — three rounds behind Warren, which he calls far too wide. He says Dowdle looks like he could be the starter. RB32. Sal RB27 and slightly ahead of Warren on the McCarthy connection from Dallas, projecting 250-plus carries.",0,"","70"],
+    "Marshawn Lloyd":[798,"RB","G","NOW CONTESTED — SAL PUT HIM ON THE SELL LIST. MASON still calls him the biggest riser on the running-back board as the direct Jacobs beneficiary and the projected starter in any game Jacobs misses, but now hedges that Lloyd has never proven at the NFL level that he can hold a job. SAL is out: nine career touches in two years, one game played, repeated hamstrings plus an ankle, and a Packers offensive line that grades 29th by consensus — which hits an inexperienced back first. He would trade Lloyd for Odunze, Marvin Harrison or Christian Watson. Kaleb Johnson is the RB2 if Lloyd breaks down.",1,"82",""],
+    "Tony Pollard":[930,"RB","H","RB1 by default on a bad Titans team. Sal RB30: Spears outsnapped him in the first preseason game, and 12-14 carries at 3.5 to 4.5 a pop is the realistic ceiling in that offense.",0,"","72"],
+    "Braelon Allen":[935,"RB","I","Played 100% of the Jets' second-team backfield snaps. Last year's injury was a serious MCL sprain, not an ACL. 22 and a freak athlete. Sal: have him rostered now.",0,"47",""],
+    "Chuba Hubbard":[690,"RB","H","BOTH NOW PREFER HIM TO BROOKS — A CLEAN FLIP, AND ONE OF THE BEST VALUES LEFT. MASON says outright that if not for the hamstring he would rank Hubbard OVER Brooks, calls him possibly one of the best values in drafts right now, notes he is the named team captain and sounds good to go for week one, and points at 16 ppg two years ago. SAL is blunter: Hubbard is the better back and the RB1 here, he has been practising over a week, and Brooks at a sixth-round price is a joke. Get him in the double-digit rounds.",0,"","88"],
+    "J.K. Dobbins":[950,"RB","H","Sal, 92nd: the RB1 in a top-10 Denver offense behind a good line, which is real, but he has missed at least five games every year for five years. Mason is fading him outright: his best-ever finish is RB18 in points per game, Harvey catches the ball, and Coleman vultures goal-line work.",0,"97","92"],
+    "Xavier Worthy":[990,"WR","I","Mason called taking him early a mistake.",0,"57",""],
+    "Tyler Allgeier":[1020,"RB","I","Top handcuff on the Jeremiyah Love ankle.",0,"48",""],
+    "Tre Tucker":[1025,"WR","I","Likely the Raiders WR1 — he RESTED while Naylor, Bech and Benson played the preseason game. Going in round 16, the cheapest WR1 in fantasy. Ugly room, but free.",0,"",""],
+    "Isaiah Likely":[1027,"TE","I","WARNING — good camp reports, but he was off the field in run-blocking situations in the preseason and may not clear 50% of snaps. Below that he is not fantasy relevant.",0,"",""],
+    "Jaydon Blue":[1030,"RB","I","Sal: a last-round dart in round 15.",0,"",""],
+    "Kaelon Black":[1040,"RB","I","McCaffrey handcuff. Effectively undrafted — Mason takes him in every live-stream draft.",0,"49",""],
+    "Keaton Mitchell":[856,"RB","I","PREMIUM HANDCUFF, BOTH MENTION HIM. Mike McDaniel printed his photo, put it on the wall and told the Chargers he was the one guy they had to get; that produced 5M guaranteed at signing, against Rachaad White's 1.7M. Mason: nothing at all if Hampton is healthy, the starter in a good offense if he is not. ESPN ADP 170, Sleeper 184, so usually free.",0,"","42"],
+    "Juwan Johnson":[862,"TE","I","THE FREE TIGHT-END FALLBACK. Mason's one waiver-wire tight end: TE12 in points per game last year, up four slots in his rankings in 30 days, and the Jordan Tyson injury opens the targets with only Olave competing. Sleeper ADP around 188, so he is probably sitting on your wire. Pair him with Kittle if you took Kittle.",0,"","-"],
+    "Mike Washington Jr.":[815,"RB","G","THE JEANTY HANDCUFF, and both moved him up. Mason moved him up considerably: a phenomenal prospect who fell to day three, and exactly the profile you want in the last roster spots, one injury away from real value. Sal RB50 for the same reason. PFF's number one graded preseason rusher.",0,"","50"],
+    "Tank Bigsby":[866,"RB","I","Sal RB45. Bigsby is genuinely good and Saquon is 29, so six to eight touches a game in a better Eagles offense is realistic on its own. If Saquon ever misses time, and he has a torn ACL and an ankle injury on his resume, Bigsby is a week-in week-out top-12 back.",0,"","-"],
+    "Jonah Coleman":[872,"RB","I","Sal RB46, and the only third-string back on his top-50. Sean Payton: I did not need to see additional evidence of what I have been seeing for three weeks. He is the three-down answer if Dobbins misses time, which Dobbins has done every year for five years. Mason notes he vultures goal-line work from Harvey even now.",0,"","-"],
+    "Kenny Gainwell":[878,"RB","I","MASON MOVED HIM DOWN SLIGHTLY on Sean Tucker returning to Tampa: if Bucky gets hurt, Gainwell is now clearly just the receiving back and Tucker is the first- and second-down back, which splits the handcuff value two ways. Still a premium handcuff and worth more here in full PPR. Sal RB40: one of the best receiving backs in the league, 73 catches last year, 15 ppg over the second half.",0,"",""],
+    "Josh Allen":[10109,"QB","QB","MASON'S FORMAT RULE, RESTATED ON THE FINAL BOARD: he is very excited to take Allen in leagues where you start only TWO receivers and one flex — but if you start three receivers or more flex spots, build out the skill positions instead of paying for the elite quarterback. Sal fades him hard on an 18-spot gap: Allen beat quarterbacks 2 through 6 by about one point per game last year. Both are waiting. Rule 1 holds.",0,"35","38"],
+    "Jayden Daniels":[10110,"QB","QB","Sal, 62nd, calls him a great pick in this range and the reason not to pay for Allen. Mason MOVED HIM DOWN to 68th on the Laremy Tunsil injury and how bad the Commanders line now looks.",0,"68","62"],
+    "Drake Maye":[10111,"QB","QB","Mason's QB target and how he justified passing on Allen: QB2 in points per game at 20.7 in his second season, and he got him at the end of round 7. Sal says he goes way too soon at an ADP of 52 when Daniels and Hurts are available rounds later.",0,"63","69"],
+    "Jalen Hurts":[10112,"QB","QB","Mason: this is a 4-point passing TD league, which is exactly where you target Hurts. In a 6-point league Dak and Herbert outscore him. Sal has him 64th and in the same wait-on-QB bucket as Daniels.",0,"69","64"],
+    "Lamar Jackson":[10113,"QB","QB","Sal is 18 picks below consensus for the same reason as Allen: he is not spending up at quarterback this year and starts looking in round 6. Mason likes the ceiling but calls it one of the lowest floors in fantasy.",0,"","57"],
+    "Joe Burrow":[10114,"QB","QB","Both fade him in this 4-point passing TD format. Sal is 20 picks below market: no rushing upside and a real injury history, not worth a fifth. Mason wants him only in a 6-point league.",0,"64","73"],
+    "Kyler Murray":[10115,"QB","QB","STILL THE EDGE, but the secret is out. Both analysts now treat the Minnesota job as settled and are pricing Jefferson and Addison UP because of it. His QB17 ADP will not survive that. Round 10 is still the plan, but do not assume he lasts to 11 or 12 any more.",0,"","-"],
+    "Brock Purdy":[10116,"QB","QB","Top-10 in every game he has started and finished.",0,"10","7"],
+    "Jaxson Dart":[10117,"QB","QB","Cheap insurance behind a punt.",0,"7",""],
+    "Bo Nix":[10118,"QB","QB","Same.",0,"8",""],
+    "KC Concepcion":[995,"WR","I","MASON: THE TALENT IS NOT THE PROBLEM. He calls him an incredible talent, better than a lot of the receivers ranked ahead of him — and then ranks him WR48 anyway, for one reason: he plays for the Cleveland Browns. Late-round dart only.",0,"",""],
+    "Jacobe Lane":[1110,"WR","I","SAL'S NAMED FADE IN THE 10TH-11TH ROUND RANGE. A third-round rookie out of USC tearing up Ravens camp, with Lamar Jackson comping his hands to Beckham and Hopkins, and 4-47 with a touchdown across two preseason games. Sal's objection is the queue, not the player: Zay Flowers is the number one, Rasheed Bateman is still there, Mark Andrews steps up with Isaiah Likely gone, and this is a Lamar-and-Derrick-Henry run-first offense. He would rather have Matthew Golden in the same range. Mason does not rank him in his top 50 receivers.",0,"",""],
+    "Matthew Golden":[990,"WR","I","MASON DISLIKES THE PROFILE AND TAKES HIM ANYWAY. He hated the analytical profile coming out of Texas despite the round-one capital, and calls the rookie season horrible — but there is a path to a decent role now that Doubs and Wicks are gone. WR47. SAL uses him as the direct comparison against Jacobe Lane in the same range: Golden MIGHT be the number one receiver on the Packers; Lane never will be on Baltimore.",0,"",""],
+    "Kaleb Johnson":[1105,"RB","I","THE CONTINGENCY BEHIND THE CONTINGENCY IN GREEN BAY. Sal: a better college prospect than MarShawn Lloyd with far more Iowa workload, but the Packers gave up only a 2028 sixth-round pick for him and would not spend a 2027 one, which tells you what they think — RB3 at best today. HIS POINT IS THE CHAIN: Lloyd has never stayed healthy, and if Lloyd breaks down Sal expects Johnson, not Christopher Brooks, to take the RB2 job. Mason lists him as a premium handcuff worth a late look.",0,"",""],
+    "Jaylen Warren":[700,"RB","H","MASON: THE LEADER OF A COMMITTEE THAT MAY NOT MATTER. He thinks Warren heads the Pittsburgh backfield but says it may not matter who starts — a 55-45 or 60-40 split leaves neither back exciting, and Warren managed only 13.5 ppg last year as the lead. Mason flags the Flock draft as the tell: Warren went 6.01 and Dowdle went 9.03, and those two should have been far closer together. RB27.",0,"68",""],
+  };
+
+  // Board lookup is name-based; normName already handles suffixes and punctuation.
+  var BOARD_BY_KEY = (function(){
+    var m = {}; Object.keys(BOARD).forEach(function(n){ m[normName(n)] = BOARD[n]; }); return m;
+  })();
+  function boardEntry(name){ return BOARD_BY_KEY[normName(name)] || null; }
+  function noteFor(name){
+    var e = boardEntry(name);
+    return e && e[3] ? [null, e[3]] : null;
+  }
+
+  var $ = function(id){ return document.getElementById(id); };
+  var esc = function(s){ return String(s).replace(/[&<>"]/g, function(c){
+    return {"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;"}[c]; }); };
+
+  (function initSetup(){
+    var saved = loadSetup();
+    fillSelect($("teams"), 4, 20, saved ? parseInt(saved.teams,10) : 12);
+    if (saved && saved.league) $("league").value = saved.league;
+    if (saved && saved.prov) $("prov").value = saved.prov;
+    if (saved && typeof saved.user === "string" && saved.user) $("user").value = saved.user;
+    function syncProv(){
+      var sleeper = $("prov").value === "sleeper";
+      $("userWrap").hidden = !sleeper;
+      if (sleeper && !$("user").value.trim()){
+        showState("warn", "Add your Sleeper username",
+          "<p>Open <strong>Override</strong> below and enter it once. Without it the page cannot " +
+          "tell which roster is yours, so it will follow the round plan instead of your actual needs. " +
+          "Everything else works either way.</p>");
+      } else {
+        clearState();
+      }
+    }
+    syncProv();
+    rebuildSlots(saved ? parseInt(saved.slot,10) : 12);
+    rebuildRounds();
+    $("teams").addEventListener("change", function(){ rebuildSlots(); saveSetup(); });
+    $("slot").addEventListener("change", function(){ paintLadder(); saveSetup(); });
+    $("league").addEventListener("change", saveSetup);
+    $("prov").addEventListener("change", function(){ syncProv(); saveSetup(); });
+    $("user").addEventListener("change", saveSetup);
+  })();
+
+  function rebuildRounds(){
+    var sel = $("round"), cur = sel.value;
+    sel.innerHTML = "";
+    var auto = document.createElement("option");
+    auto.value = "auto"; auto.textContent = "Detected";
+    sel.appendChild(auto);
+    for (var r = 1; r <= LEAGUE.rounds; r++){
+      var o = document.createElement("option");
+      o.value = String(r); o.textContent = "Plan for round " + r;
+      if (String(r) === cur) o.selected = true;
+      sel.appendChild(o);
+    }
+    if (cur === "auto") auto.selected = true;
+  }
+  rebuildRounds();
+
+  // Key bumped when the confirmed draft slot changed to 12, so a previously
+  // saved slot-10 setup is discarded once rather than overriding the default.
+  var STORE = "ddn-console-setup-v2";
+  function saveSetup(){
+    try { localStorage.setItem(STORE, JSON.stringify({
+      league: $("league").value.trim(), prov: $("prov").value, user: $("user").value.trim(),
+      teams: $("teams").value, slot: $("slot").value
+    })); } catch(e){}
+  }
+  function loadSetup(){
+    try { return JSON.parse(localStorage.getItem(STORE) || "null"); } catch(e){ return null; }
+  }
+
+  function fillSelect(el, from, to, cur){
+    el.innerHTML = "";
+    for (var i = from; i <= to; i++){
+      var o = document.createElement("option");
+      o.value = String(i); o.textContent = String(i);
+      if (i === cur) o.selected = true;
+      el.appendChild(o);
+    }
+  }
+
+  function currentTeams(){ return parseInt($("teams").value, 10) || 12; }
+  function currentSlot(){  return parseInt($("slot").value, 10)  || 1; }
+
+  function paintLadder(){
+    var teams = currentTeams(), slot = currentSlot();
+    LEAGUE.teams = teams;
+    var picks = myPicks(teams, slot, LEAGUE.rounds);
+    var txt = picks.map(function(p){
+      return p.round + "." + (p.slot < 10 ? "0" : "") + p.slot;
+    }).join("  ");
+    $("ladder").innerHTML = "Your picks &nbsp;<b>" + txt + "</b>";
+  }
+
+  function rebuildSlots(keep){
+    var teams = currentTeams();
+    var want = keep != null ? Math.min(keep, teams) : Math.min(currentSlot() || 1, teams);
+    fillSelect($("slot"), 1, teams, want);
+    paintLadder();
+  }
+
+  function leagueCfg(){
+    return { id: $("league").value.trim(), prov: $("prov").value,
+             user: $("user").value.trim(),
+             teams: currentTeams(), slot: currentSlot() };
+  }
+
+  // A slot is FILLED when playerId is anything but the -1 placeholder.
+  // Defenses carry large NEGATIVE ids, so ">0" would wrongly read them as empty.
+  function isFilled(pk){
+    return pk && pk.playerId != null && pk.playerId !== -1 && pk.playerId !== 0;
+  }
+
+  // ---- manual pick log --------------------------------------------------
+  // The console's real input during a live draft. On 30 Aug 2026 all three ESPN
+  // read endpoints were confirmed frozen mid-draft: get_draft returned 0/224,
+  // get_available_players still listed drafted players as free agents, and every
+  // team roster came back empty. The log is shaped into an ESPN-style pick array
+  // so takenFrom, readDraft and rosterFromEspnDraft all work on it unchanged.
+
+  function logKey(leagueId){ return "ddn-draft-log-" + (leagueId || "x"); }
+  function loadLog(leagueId){
+    try {
+      var v = JSON.parse(localStorage.getItem(logKey(leagueId)) || "[]");
+      return Array.isArray(v) ? v : [];
+    } catch(e){ return []; }
+  }
+  function saveLog(leagueId, entries){
+    try { localStorage.setItem(logKey(leagueId), JSON.stringify(entries)); } catch(e){}
+  }
+
+  // normalised name -> player id, built from the baked-in map plus anything fetched.
+  var NAME_TO_ID = null;
+  function nameIndex(){
+    if (NAME_TO_ID) return NAME_TO_ID;
+    NAME_TO_ID = {};
+    var m = loadPlayerMap(), k;
+    for (k in m){ if (m.hasOwnProperty(k)) NAME_TO_ID[normName(m[k].n)] = k; }
+    return NAME_TO_ID;
+  }
+
+  // Tolerant match: exact first, then a unique containment hit. The containment
+  // pass exists because pasted lists lose their first character surprisingly often
+  // ("ony Pollard", "roncos D/ST").
+  function matchPlayerId(name){
+    var idx = nameIndex(), key = normName(name);
+    if (!key) return null;
+    if (idx[key]) return idx[key];
+    var hits = [], k;
+    for (k in idx){
+      if (!idx.hasOwnProperty(k)) continue;
+      if (k.indexOf(key) !== -1 || key.indexOf(k) !== -1) hits.push(idx[k]);
+      if (hits.length > 1) break;
+    }
+    return hits.length === 1 ? hits[0] : null;
+  }
+
+  // ESPN's copied pick list is pairs of lines:
+  //   "Justin Jefferson / MIN WR"
+  //   "R1, P1 - Eric Fekete"
+  // Position can be compound ("WR, CB") and defenses read "Texans D/ST / HOU D/ST",
+  // so the name is taken from the LAST " / " on the line.
+  function parseDraftPaste(text){
+    var lines = String(text || "").split(/\r?\n/), out = [], pending = null;
+    var rePick = /^R\s*(\d+)\s*,\s*P\s*(\d+)\s*[-\u2013\u2014]\s*(.+?)\s*$/;
+    for (var i = 0; i < lines.length; i++){
+      var line = lines[i].trim();
+      if (!line) continue;
+      var m = rePick.exec(line);
+      if (m){
+        if (pending){
+          out.push({ r: parseInt(m[1],10), p: parseInt(m[2],10),
+                     owner: m[3], name: pending, id: matchPlayerId(pending) });
+          pending = null;
+        }
+        continue;
+      }
+      var cut = line.lastIndexOf(" / ");
+      if (cut > 0) pending = line.slice(0, cut).trim();
+    }
+    out.sort(function(a,b){ return (a.r - b.r) || (a.p - b.p); });
+    return out;
+  }
+
+  // Shape the log into the full pick grid ESPN would have returned, placeholders
+  // and all, so nothing downstream needs to know the difference. teamId is the
+  // draft SLOT, which makes the caller's "my team id" simply cfg.slot.
+  function manualPicks(entries, teams, rounds){
+    var byOverall = {}, i;
+    for (i = 0; i < entries.length; i++){
+      var e = entries[i];
+      byOverall[(e.r - 1) * teams + e.p] = e;
+    }
+    var picks = [];
+    for (var r = 1; r <= rounds; r++){
+      for (var p = 1; p <= teams; p++){
+        var ov = (r - 1) * teams + p;
+        var e2 = byOverall[ov];
+        var row = {
+          overallPickNumber: ov, roundId: r, roundPickNumber: p,
+          // snake: an odd round runs forward, an even round runs back
+          teamId: (r % 2 === 1) ? p : (teams - p + 1),
+          playerId: (e2 && e2.id != null) ? Number(e2.id) : -1
+        };
+        // Carry the name too, so a player the id map could not resolve is still
+        // struck off the board by name rather than silently staying available.
+        if (e2 && e2.name){
+          var bits = e2.name.split(" ");
+          row.metadata = { first_name: bits.shift(), last_name: bits.join(" ") };
+        }
+        picks.push(row);
+      }
+    }
+    return picks;
+  }
+
+  (function initLog(){
+    var paste = $("logPaste");
+    if (!paste) return;
+    function leagueId(){ return $("league").value.trim(); }
+
+    function render(){
+      var entries = loadLog(leagueId());
+      var el = $("logStat");
+      if (!entries.length){ el.textContent = "No picks loaded."; return; }
+      var t = currentTeams() || LEAGUE.teams || 12;
+      var n = entries.length + 1;
+      var r = Math.ceil(n / t), pk = n - (r - 1) * t;
+      var unmatched = entries.filter(function(e){ return e.id == null; });
+      el.innerHTML =
+        "<b>" + entries.length + "</b> picks \u00b7 on the clock <b>" + r + "." + pk + "</b> (#" + n + ")" +
+        (unmatched.length
+          ? "<br><span class=\"bad\">" + unmatched.length + " unrecognised: " +
+            esc(unmatched.slice(0,2).map(function(e){ return e.name; }).join(", ")) + "</span>"
+          : "");
+    }
+
+    $("logLoad").addEventListener("click", function(){
+      var parsed = parseDraftPaste(paste.value);
+      if (!parsed.length){
+        showState("warn", "No picks found in that paste",
+          "<p>Expected ESPN's own format \u2014 <code>Justin Jefferson / MIN WR</code> on one line, " +
+          "<code>R1, P1 - Team Name</code> on the next.</p>");
+        return;
+      }
+      saveLog(leagueId(), parsed);
+      render();
+      $("go").click();
+    });
+
+    $("logClear").addEventListener("click", function(){
+      saveLog(leagueId(), []);
+      paste.value = "";
+      render();
+      $("go").click();
+    });
+
+    $("league").addEventListener("change", render);
+    render();
+  })();
+
+  function readDraft(payload, teams, slot){
+    var picks = (payload && payload.picks) || [];
+    if (!picks.length) return null;
+    // Without a valid slot we cannot say which picks are mine — and guessing would
+    // wrongly report the draft as complete. Say nothing instead.
+    if (!(teams > 1) || !(slot >= 1) || slot > teams) return null;
+    var made = 0, i;
+    for (i=0; i<picks.length; i++){ if (isFilled(picks[i])) made++; }
+
+    // Identify my slots by snake position, so this works in any league whether or
+    // not the team id is known.
+    var want = {};
+    myPicks(teams, slot, Math.ceil(picks.length / teams)).forEach(function(p){ want[p.overall] = 1; });
+    var mine = picks.filter(function(p){ return want[p.overallPickNumber]; })
+                    .sort(function(a,b){ return a.overallPickNumber - b.overallPickNumber; });
+    var next = null;
+    for (i=0; i<mine.length; i++){ if (!isFilled(mine[i])){ next = mine[i]; break; } }
+
+    // How many picks are still ahead of mine?
+    var away = null;
+    if (next){
+      away = 0;
+      for (i=0; i<picks.length; i++){
+        if (picks[i].overallPickNumber < next.overallPickNumber && !isFilled(picks[i])) away++;
+      }
+    }
+    return {
+      made: made,
+      total: picks.length,
+      started: made > 0,
+      complete: !next,
+      round: next ? next.roundId : Math.min(LEAGUE.rounds, Math.floor(made / teams) + 1),
+      overall: next ? next.overallPickNumber : null,
+      slot: next ? next.roundPickNumber : null,
+      away: away,
+      onClock: away === 0
+    };
+  }
+
+  // ---- ESPN roster reconstruction ---------------------------------------
+  // Learned the hard way in the Sleeper draft: fantasy_get_my_team can simply stop
+  // answering mid-draft, and the roster has to be rebuilt from the pick list. ESPN
+  // needs its own path, because its picks look nothing like Sleeper's.
+  //
+  // Verified against this league's real 2025 draft (192 picks):
+  //   * every pick carries teamId, and all 12 teams have exactly 16 picks. teamId is
+  //     a STRONGER key than the pick number - it survives a wrong slot assumption.
+  //   * picks carry NO name and NO position, only a numeric playerId.
+  //   * a drafted player leaves the availability pool, so the name cannot be looked
+  //     up after the fact. The pool must be snapshotted BEFORE the draft.
+  // Hence the id -> name map below, which is filled on every pool fetch.
+
+  var PMAP = "ddn-player-map";
+
+  // Baked-in snapshot of the full ESPN draftable pool, taken 30 Aug 2026 while every
+  // player was still a free agent: 400 ids = 47 QB, 101 RB, 131 WR, 51 TE, 38 K, 32 D/ST.
+  // This ships WITH the page, so rebuilding a roster from draft picks works on a fresh
+  // browser, in a private window, or after site data is cleared - none of which
+  // localStorage survives. Source of record: player-ids.json in the project.
+  var SEED_IDS = {
+    "-16001":"Falcons D/ST|D/ST|ATL","-16002":"Bills D/ST|D/ST|BUF","-16003":"Bears D/ST|D/ST|CHI",
+    "-16004":"Bengals D/ST|D/ST|CIN","-16005":"Browns D/ST|D/ST|CLE","-16006":"Cowboys D/ST|D/ST|DAL",
+    "-16007":"Broncos D/ST|D/ST|DEN","-16008":"Lions D/ST|D/ST|DET","-16009":"Packers D/ST|D/ST|GB",
+    "-16010":"Titans D/ST|D/ST|TEN","-16011":"Colts D/ST|D/ST|IND","-16012":"Chiefs D/ST|D/ST|KC",
+    "-16013":"Raiders D/ST|D/ST|LV","-16014":"Rams D/ST|D/ST|LAR","-16015":"Dolphins D/ST|D/ST|MIA",
+    "-16016":"Vikings D/ST|D/ST|MIN","-16017":"Patriots D/ST|D/ST|NE","-16018":"Saints D/ST|D/ST|NO",
+    "-16019":"Giants D/ST|D/ST|NYG","-16020":"Jets D/ST|D/ST|NYJ","-16021":"Eagles D/ST|D/ST|PHI",
+    "-16022":"Cardinals D/ST|D/ST|ARI","-16023":"Steelers D/ST|D/ST|PIT","-16024":"Chargers D/ST|D/ST|LAC",
+    "-16025":"49ers D/ST|D/ST|SF","-16026":"Seahawks D/ST|D/ST|SEA","-16027":"Buccaneers D/ST|D/ST|TB",
+    "-16028":"Commanders D/ST|D/ST|WSH","-16029":"Panthers D/ST|D/ST|CAR","-16030":"Jaguars D/ST|D/ST|JAX",
+    "-16033":"Ravens D/ST|D/ST|BAL","-16034":"Texans D/ST|D/ST|HOU","10621":"Nick Folk|K|ATL",
+    "11252":"Joe Flacco|QB|CIN","12483":"Matthew Stafford|QB|LAR","14880":"Kirk Cousins|QB|LV",
+    "15683":"Justin Tucker|K|FA","15818":"Keenan Allen|WR|IND","15847":"Travis Kelce|TE|KC",
+    "15864":"Geno Smith|QB|NYJ","16002":"Kyle Juszczyk|RB|SF","16733":"Odell Beckham Jr.|WR|NYG",
+    "16737":"Mike Evans|WR|SF","16800":"Davante Adams|WR|LAR","17372":"Chris Boswell|K|PIT",
+    "17427":"Cairo Santos|K|CHI","2473037":"Jason Myers|K|SEA","2573401":"Tyler Higbee|TE|LAR",
+    "2576925":"Darren Waller|TE|CAR","2577417":"Dak Prescott|QB|DAL","2578570":"Jacoby Brissett|QB|ARI",
+    "2969939":"Jameis Winston|QB|NYG","2971573":"Ka'imi Fairbairn|K|HOU","2973405":"Kalif Raymond|WR|CHI",
+    "2976212":"Stefon Diggs|WR|WSH","2977187":"Cooper Kupp|WR|SEA","2985659":"Wil Lutz|K|DEN",
+    "2991662":"Mack Hollins|WR|NE","3040151":"George Kittle|TE|SF","3042519":"Aaron Jones Sr.|RB|MIN",
+    "3043078":"Derrick Henry|RB|BAL","3045147":"James Conner|RB|ARI","3046439":"Hunter Henry|TE|NE",
+    "3046779":"Jared Goff|QB|DET","3049899":"Younghoe Koo|K|FA","3050478":"Jake Elliott|K|PHI",
+    "3051876":"Evan Engram|TE|DEN","3051909":"Daniel Carlson|K|NO","3052587":"Baker Mayfield|QB|TB",
+    "3054850":"Alvin Kamara|RB|NO","3055899":"Harrison Butker|K|KC","3059915":"Kareem Hunt|RB|FA",
+    "3116164":"Mike Gesicki|TE|CIN","3116165":"Chris Godwin Jr.|WR|TB","3116365":"Mark Andrews|TE|BAL",
+    "3116385":"Joe Mixon|RB|FA","3116389":"Samaje Perine|RB|CIN","3116406":"Tyreek Hill|WR|FA",
+    "3117251":"Christian McCaffrey|RB|SF","3117256":"Dalton Schultz|TE|HOU","3121023":"Dallas Goedert|TE|PHI",
+    "3121422":"Terry McLaurin|WR|WSH","3122840":"Deshaun Watson|QB|CLE","3123076":"David Njoku|TE|LAC",
+    "3124084":"Joey Slye|K|TEN","3124679":"Jason Sanders|K|NYJ","3126486":"Deebo Samuel Sr.|WR|SF",
+    "3128429":"Courtland Sutton|WR|DEN","3128720":"Nick Chubb|RB|FA","3139477":"Patrick Mahomes|QB|KC",
+    "3149687":"Chris Brooks|RB|GB","3150744":"Chase McLaughlin|K|TB","3676833":"KaVontae Turpin|WR|DAL",
+    "3886598":"Jauan Jennings|WR|MIN","3895856":"Christian Kirk|WR|SF","3912547":"Sam Darnold|QB|SEA",
+    "3915411":"Ty Johnson|RB|BUF","3915416":"DJ Moore|WR|BUF","3915511":"Joe Burrow|QB|CIN",
+    "3916148":"Tony Pollard|RB|TEN","3916387":"Lamar Jackson|QB|BAL","3916433":"Jakobi Meyers|WR|JAX",
+    "3916945":"Darius Slayton|WR|NYG","3917232":"Tyler Bass|K|BUF","3917315":"Kyler Murray|QB|MIN",
+    "3917792":"Daniel Jones|QB|IND","3918298":"Josh Allen|QB|BUF","3925357":"Calvin Ridley|WR|TEN",
+    "3929630":"Saquon Barkley|RB|PHI","3929645":"Juwan Johnson|TE|NO","3930086":"Dawson Knox|TE|BUF",
+    "3953687":"Brandon Aubrey|K|DAL","4032473":"Rashid Shaheed|WR|SEA","4034949":"Eddy Pineiro|K|SF",
+    "4035538":"David Montgomery|RB|HOU","4035687":"Michael Pittman Jr.|WR|PIT",
+    "4036133":"T.J. Hockenson|TE|MIN","4036378":"Jordan Love|QB|GB","4038441":"Justice Hill|RB|BAL",
+    "4038815":"Rico Dowdle|RB|PIT","4038941":"Justin Herbert|QB|LAC","4039057":"Lil'Jordan Humphrey|WR|DEN",
+    "4040655":"Darnell Mooney|WR|NYG","4040715":"Jalen Hurts|QB|PHI","4040761":"Devin Singletary|RB|NYG",
+    "4047365":"Josh Jacobs|RB|GB","4047646":"A.J. Brown|WR|NE","4047650":"DK Metcalf|WR|PIT",
+    "4239993":"Tee Higgins|WR|CIN","4239996":"Travis Etienne Jr.|RB|NO","4240391":"Tommy DeVito|QB|NE",
+    "4240472":"Noah Gray|TE|KC","4240603":"Malik Davis|RB|DAL","4241372":"Hollywood Brown|WR|PHI",
+    "4241389":"CeeDee Lamb|WR|DAL","4241416":"Chuba Hubbard|RB|CAR","4241457":"Najee Harris|RB|NYG",
+    "4241463":"Jerry Jeudy|WR|CLE","4241464":"Mac Jones|QB|SF","4241474":"Brian Robinson Jr.|RB|ATL",
+    "4241478":"DeVonta Smith|WR|PHI","4241479":"Tua Tagovailoa|QB|ATL","4241985":"J.K. Dobbins|RB|DEN",
+    "4242335":"Jonathan Taylor|RB|IND","4242355":"Jake Ferguson|TE|DAL","4242433":"Joshua Palmer|WR|BUF",
+    "4242512":"Malik Willis|QB|MIA","4242557":"Colby Parkinson|TE|LAR","4243331":"Cade Otton|TE|TB",
+    "4243371":"Riley Patterson|K|MIA","4248528":"Christian Watson|WR|GB","4249087":"Matt Gay|K|LV",
+    "4249417":"Jalen Tolbert|WR|MIA","4258173":"Nico Collins|WR|HOU","4258595":"Cole Kmet|TE|CHI",
+    "4258620":"Andre Szmyt|K|CLE","4259147":"Jake Tonges|TE|SF","4259545":"D'Andre Swift|RB|CHI",
+    "4259619":"Blake Grupe|K|IND","4262921":"Justin Jefferson|WR|MIN","4360078":"Alec Pierce|WR|IND",
+    "4360234":"Evan McPherson|K|CIN","4360248":"Kyle Pitts Sr.|TE|ATL","4360310":"Trevor Lawrence|QB|JAX",
+    "4360423":"Michael Penix Jr.|QB|ATL","4360438":"Brandon Aiyuk|WR|SF","4360516":"Tyrone Tracy Jr.|RB|NYG",
+    "4360569":"Jordan Mason|RB|MIN","4360635":"Chig Okonkwo|TE|WSH","4360689":"Tyler Shough|QB|NO",
+    "4360698":"Joe Milton III|QB|DAL","4360761":"Michael Wilson|WR|ARI","4360797":"Tutu Atwell|WR|LAR",
+    "4360939":"Rashod Bateman|WR|BAL","4361050":"Isaiah Likely|TE|NYG","4361307":"Trey McBride|TE|ARI",
+    "4361370":"Chris Olave|WR|NO","4361409":"Jahan Dotson|WR|ATL","4361411":"Pat Freiermuth|TE|PIT",
+    "4361432":"Romeo Doubs|WR|NE","4361529":"Isiah Pacheco|RB|DET","4361579":"Javonte Williams|RB|DAL",
+    "4361741":"Brock Purdy|QB|SF","4362081":"Cameron Dicker|K|LAC","4362238":"Chase Brown|RB|CIN",
+    "4362249":"Jayden Reed|WR|GB","4362478":"Emari Demercado|RB|KC","4362619":"Chris Rodriguez Jr.|RB|JAX",
+    "4362628":"Ja'Marr Chase|WR|CIN","4362748":"Tyler Badie|RB|DEN","4362887":"Justin Fields|QB|KC",
+    "4362921":"Tyquan Thornton|WR|KC","4363538":"Chad Ryland|K|ARI","4366031":"Tank Dell|WR|HOU",
+    "4366963":"Dylan Laube|RB|LV","4367209":"Greg Dulcich|TE|MIA","4368003":"Andrei Iosivas|WR|CIN",
+    "4371733":"Kenny Gainwell|RB|TB","4372016":"Jaylen Waddle|WR|DEN","4372066":"Jake Moody|K|FA",
+    "4372096":"Luke Schoonmaker|TE|DAL","4372561":"Isaac Guerendo|RB|SF","4372780":"Tommy Tremble|TE|CAR",
+    "4373626":"Tyler Allgeier|RB|ARI","4373678":"Khalil Shakir|WR|BUF","4374302":"Amon-Ra St. Brown|WR|DET",
+    "4379399":"James Cook III|RB|BUF","4382466":"Jalen Nailor|WR|LV","4385690":"Dalton Kincaid|TE|BUF",
+    "4426338":"Bo Nix|QB|DEN","4426348":"Jayden Daniels|QB|WSH","4426354":"George Pickens|WR|DAL",
+    "4426385":"Zach Charbonnet|RB|SEA","4426388":"Jameson Williams|WR|DET","4426502":"Drake London|WR|ATL",
+    "4426515":"Puka Nacua|WR|LAR","4426948":"Luke McCaffrey|WR|WSH","4427095":"DeMario Douglas|WR|NE",
+    "4427366":"Breece Hall|RB|NYJ","4427728":"Bam Knight|RB|ARI","4427834":"Erick All Jr.|TE|CIN",
+    "4428209":"Ricky Pearsall|WR|SF","4428331":"Rashee Rice|WR|KC","4428557":"Tyjae Spears|RB|TEN",
+    "4428718":"Tre Tucker|WR|LV","4428850":"Dontayvion Wicks|WR|PHI","4429013":"Tank Bigsby|RB|PHI",
+    "4429022":"Kayshon Boutte|WR|HOU","4429023":"MarShawn Lloyd|RB|GB","4429025":"Quentin Johnston|WR|LAC",
+    "4429059":"Woody Marks|RB|HOU","4429084":"Anthony Richardson Sr.|QB|IND","4429086":"Michael Mayer|TE|LV",
+    "4429096":"Blake Corum|RB|LAR","4429148":"Theo Johnson|TE|NYG","4429160":"De'Von Achane|RB|MIA",
+    "4429205":"Jordan Addison|WR|MIN","4429275":"Trey Benson|RB|ARI","4429299":"Tahj Brooks|RB|CIN",
+    "4429501":"Ray Davis|RB|BUF","4429615":"Zay Flowers|WR|BAL","4429795":"Jahmyr Gibbs|RB|DET",
+    "4429835":"George Holani|RB|SEA","4429939":"Jawhar Jordan|RB|HOU","4430027":"Sam LaPorta|TE|DET",
+    "4430034":"Xavier Legette|WR|CAR","4430539":"Brenton Strange|TE|JAX","4430737":"Kyren Williams|RB|LAR",
+    "4430802":"Darnell Washington|TE|PIT","4430807":"Bijan Robinson|RB|ATL","4430834":"Jalen McMillan|WR|TB",
+    "4430841":"Carson Beck|QB|ARI","4430871":"Sean Tucker|RB|TB","4430878":"Jaxon Smith-Njigba|WR|SEA",
+    "4430968":"Kimani Vidal|RB|LAC","4431268":"Chimere Dike|WR|TEN","4431280":"Troy Franklin|WR|DEN",
+    "4431299":"Rome Odunze|WR|CHI","4431452":"Drake Maye|QB|NE","4431459":"Tyler Warren|TE|IND",
+    "4431487":"Savion Williams|WR|GB","4431492":"Roman Wilson|WR|PIT","4431545":"Will Shipley|RB|PHI",
+    "4431574":"Eli Stowers|TE|PHI","4431588":"Ja'Tavion Sanders|TE|CAR","4431611":"Caleb Williams|QB|CHI",
+    "4432577":"C.J. Stroud|QB|HOU","4432620":"Parker Washington|WR|JAX","4432665":"Brock Bowers|TE|LV",
+    "4432708":"Marvin Harrison Jr.|WR|ARI","4432710":"TreVeyon Henderson|RB|NE",
+    "4432762":"Shedeur Sanders|QB|CLE","4432773":"Brian Thomas Jr.|WR|JAX","4433970":"J.J. McCarthy|QB|MIN",
+    "4566158":"Ben Sauls|K|NYG","4567048":"Kenneth Walker III|RB|KC","4567104":"Will Reichard|K|MIN",
+    "4567750":"Emeka Egbuka|WR|TB","4568263":"Ryan Fitzgerald|K|CAR","4568490":"RJ Harvey|RB|DEN",
+    "4569173":"Rhamondre Stevenson|RB|NE","4569559":"Devaughn Vele|WR|NO",
+    "4569587":"Wan'Dale Robinson|WR|TEN","4569603":"Malik Washington|WR|MIA",
+    "4569618":"Garrett Wilson|WR|NYJ","4569923":"Andy Borregales|K|NE","4569987":"Jaylen Warren|RB|PIT",
+    "4570037":"Terrance Ferguson|TE|LAR","4571557":"Spencer Shrader|K|IND","4572680":"Tucker Kraft|TE|GB",
+    "4574716":"Harrison Mevis|K|LAR","4575131":"Jacory Croskey-Merritt|RB|WSH","4576297":"AJ Barner|TE|SEA",
+    "4586312":"Jaylin Noel|WR|HOU","4595342":"Oronde Gadsden|TE|LAC","4595348":"Malik Nabers|WR|NYG",
+    "4596334":"Keaton Mitchell|RB|LAC","4596448":"Bucky Irving|RB|TB","4596602":"Brashard Smith|RB|KC",
+    "4597500":"Adonai Mitchell|WR|NYJ","4597703":"Tory Horton|WR|SEA","4599739":"Kendre Miller|RB|NO",
+    "4600981":"Pat Bryant|WR|DEN","4603186":"Jack Bech|WR|LV","4608686":"Kyle Monangai|RB|CHI",
+    "4608810":"Tez Johnson|WR|TB","4612826":"Ladd McConkey|WR|LAC","4613202":"Kyle Williams|WR|NE",
+    "4635008":"Keon Coleman|WR|BUF","4678006":"Elijah Arroyo|TE|SEA","4678008":"Jonathon Brooks|RB|CAR",
+    "4682648":"Malachi Fields|WR|NYG","4682745":"Jaylen Wright|RB|MIA","4683062":"Xavier Worthy|WR|KC",
+    "4683153":"Skyler Bell|WR|BUF","4685246":"Kaytron Allen|RB|WSH","4685247":"Braelon Allen|RB|NYJ",
+    "4685261":"Germie Bernard|WR|PIT","4685278":"Luther Burden III|WR|CHI","4685279":"Jaydon Blue|RB|DAL",
+    "4685350":"Trevor Etienne|RB|CAR","4685382":"Omarion Hampton|RB|LAC","4685397":"Jordan James|RB|SF",
+    "4685415":"Travis Hunter|WR|JAX","4685472":"Tetairoa McMillan|WR|CAR","4685512":"Jadarian Price|RB|SEA",
+    "4685522":"Ty Simpson|QB|LAR","4685526":"Adam Randall|RB|BAL","4685555":"Nicholas Singleton|RB|TEN",
+    "4685702":"Quinshon Judkins|RB|CLE","4685720":"Bryce Young|QB|CAR","4686361":"Cam Little|K|JAX",
+    "4686422":"Xavier Hutchinson|WR|HOU","4686468":"Seth McGowan|RB|IND","4686472":"Marvin Mims Jr.|WR|DEN",
+    "4686612":"Tre' Harris|WR|LAC","4686658":"Mike Washington Jr.|RB|LV","4686728":"Gunnar Helm|TE|TEN",
+    "4688380":"Cam Ward|QB|TEN","4688813":"Josh Downs|WR|IND","4689114":"Jaxson Dart|QB|NYG",
+    "4689936":"Jake Bates|K|DET","4695404":"Isaiah Davis|RB|NYJ","4695883":"Jalen Coker|WR|CAR",
+    "4696044":"Kaelon Black|RB|SF","4696981":"Cam Skattebo|RB|NYG","4697745":"Tyler Loop|K|BAL",
+    "4697815":"Rachaad White|RB|WSH","4701936":"Matthew Golden|WR|GB","4702555":"Jonah Coleman|RB|DEN",
+    "4710714":"De'Zhaun Stribling|WR|SF","4711533":"Ollie Gordon II|RB|MIA","4714771":"Drew Allar|QB|PIT",
+    "4723086":"Colston Loveland|TE|CHI","4723820":"Omar Cooper Jr.|WR|NYJ","4808766":"Mason Taylor|TE|NYJ",
+    "4808839":"Isaiah Bond|WR|CLE","4819231":"Kaleb Johnson|RB|PIT","4831959":"Eli Raridon|TE|NE",
+    "4832800":"Denzel Boston|WR|CLE","4832846":"Demond Claiborne|RB|MIN","4832955":"Emmett Johnson|RB|KC",
+    "4833029":"Max Klare|TE|LAR","4837248":"Fernando Mendoza|QB|LV","4869461":"Trey Smack|K|GB",
+    "4869645":"Caleb Douglas|WR|MIA","4869748":"Zavion Thomas|WR|CHI","4869961":"Chris Bell|WR|MIA",
+    "4870612":"Zachariah Branch|WR|ATL","4870653":"KC Concepcion|WR|CLE","4870795":"Makai Lemon|WR|PHI",
+    "4870808":"Jeremiyah Love|RB|ARI","4870847":"Ja'Kobi Lane|WR|BAL","4871023":"Carnell Tate|WR|TEN",
+    "4874509":"DJ Giddens|RB|IND","4877706":"Jayden Higgins|WR|HOU","4879276":"Bryce Lance|WR|NO",
+    "4880281":"Jordyn Tyson|WR|NO","4882093":"Bhayshul Tuten|RB|JAX","4883647":"Elic Ayomanor|WR|TEN",
+    "4887558":"Emanuel Wilson|RB|SEA","4890973":"Ashton Jeanty|RB|LV","4911851":"LeQuint Allen Jr.|RB|JAX",
+    "4912218":"Cyrus Allen|WR|KC","5081335":"Drew Stevens|K|WSH","5081338":"Kaden Wetjen|WR|PIT",
+    "5081397":"Dylan Sampson|RB|CLE","5081432":"Antonio Williams|WR|WSH","5082424":"Dominic Zvada|K|NYG",
+    "5083076":"Harold Fannin Jr.|TE|CLE","5083315":"Kenyon Sadiq|TE|NYJ","5083754":"Ryan Flournoy|WR|DAL",
+    "5088338":"Elijah Sarratt|WR|BAL","5091739":"Chris Brazzell II|WR|CAR","5092508":"Colbie Young|WR|CIN",
+    "5123663":"Isaac TeSlaa|WR|DET","5208518":"Charlie Smyth|K|NO","5220680":"Ted Hurst III|WR|TB",
+    "5529":"Philip Rivers|QB|IND","8439":"Aaron Rodgers|QB|PIT"
+  };
+
+  // Only what this browser has saved. rememberPlayers() writes back through this, so
+  // the 400 seed rows are never duplicated into storage.
+  function loadStoredMap(){
+    try { return JSON.parse(localStorage.getItem(PMAP) || "{}") || {}; }
+    catch(e){ return {}; }
+  }
+
+  // Seed first, then anything saved locally on top - a later fetch is fresher than
+  // the snapshot and should win (traded players, name corrections, new signings).
+  function loadPlayerMap(){
+    var out = {}, k, bits;
+    for (k in SEED_IDS){
+      if (!SEED_IDS.hasOwnProperty(k)) continue;
+      bits = SEED_IDS[k].split("|");
+      out[k] = { n: bits[0], p: bits[1], t: bits[2] || "" };
+    }
+    var saved = loadStoredMap();
+    for (k in saved){ if (saved.hasOwnProperty(k)) out[k] = saved[k]; }
+    return out;
+  }
+  // Merge the current pool into the persistent id -> name map. Called on every
+  // fetch, so pressing the button once before the draft is enough to capture
+  // everyone while they are all still free agents.
+  function rememberPlayers(players){
+    if (!Array.isArray(players) || !players.length) return 0;
+    var m = loadStoredMap(), n = 0;
+    players.forEach(function(row){
+      var pl = row && row.player;
+      if (!pl || pl.id == null || !pl.name) return;
+      m[String(pl.id)] = { n: pl.name,
+                           p: pl.position === "DEF" ? "D/ST" : pl.position,
+                           t: pl.proTeam || "" };
+      n++;
+    });
+    try { localStorage.setItem(PMAP, JSON.stringify(m)); } catch(e){}
+    return n;
+  }
+
+  // Chris's own team id per league. ESPN stamps it on every pick.
+  var MY_TEAM = { "129615399": 11,   // The Delta Delta Nevers, 12 teams
+                  "227217001": 11 }; // Nictoene Fantasy, 14 teams
+
+  // The TRUE draft slot, read back out of your own picks. In an odd round the
+  // roundPickNumber is the slot; in an even round it is teams - roundPickNumber + 1.
+  // Once the draft starts this beats league settings, which can be stale. The old
+  // conflict is RESOLVED: as of 8 Sep 2026 the API's own round-1 order puts team 11
+  // at overall pick 12, matching the confirmed slot. Kept as a live cross-check.
+  function slotFromEspnDraft(rows, teamId, teams){
+    if (!Array.isArray(rows) || !(teamId > 0) || !(teams > 1)) return null;
+    for (var i = 0; i < rows.length; i++){
+      var pk = rows[i];
+      if (!pk || pk.teamId !== teamId) continue;
+      if (!(pk.roundId > 0) || !(pk.roundPickNumber > 0)) continue;
+      var sl = (pk.roundId % 2 === 1) ? pk.roundPickNumber
+                                      : (teams - pk.roundPickNumber + 1);
+      if (sl >= 1 && sl <= teams) return sl;
+    }
+    return null;
+  }
+
+  // Rebuild your roster from the ESPN pick list. Prefers teamId; falls back to
+  // matching your snake pick numbers, which is the method that actually worked
+  // when the roster endpoint went down during the Sleeper draft.
+  function rosterFromEspnDraft(payload, teamId, slot, teams, livePool){
+    var rows = payload && (payload.picks || payload.data);
+    if (!Array.isArray(rows) || !rows.length) return null;
+
+    var mine = null, how = "";
+    if (teamId > 0){
+      mine = rows.filter(function(pk){ return pk && pk.teamId === teamId; });
+      how = "teamId " + teamId;
+    }
+    if ((!mine || !mine.length) && slot >= 1 && teams > 1){
+      var want = {};
+      myPicks(teams, slot, LEAGUE.rounds).forEach(function(pk){ want[pk.overall] = 1; });
+      mine = rows.filter(function(pk){ return pk && want[pk.overallPickNumber]; });
+      how = "pick numbers for slot " + slot;
+    }
+    if (!mine || !mine.length) return null;
+
+    // Name resolution: the live pool first (freshest), then the saved snapshot.
+    var map = loadPlayerMap(), live = {};
+    (livePool || []).forEach(function(row){
+      var pl = row && row.player;
+      if (pl && pl.id != null && pl.name){
+        live[String(pl.id)] = { n: pl.name,
+                                p: pl.position === "DEF" ? "D/ST" : pl.position,
+                                t: pl.proTeam || "" };
+      }
+    });
+
+    var have  = { QB:0, RB:0, WR:0, TE:0, K:0, "D/ST":0 };
+    var byPos = { QB:[], RB:[], WR:[], TE:[], K:[], "D/ST":[] };
+    var names = [], unresolved = 0;
+
+    mine.forEach(function(pk){
+      var pid = pk.playerId;
+      // Only null / -1 / 0 are empty slots. Other NEGATIVE ids are real: ESPN
+      // encodes defenses that way (-16017 is the Patriots D/ST), so a naive
+      // "pid <= 0" guard silently drops every D/ST from the rebuilt roster.
+      if (pid == null || pid === -1 || pid === 0) return;
+      var key = String(pid);
+      var hit = live[key] || map[key];
+      if (!hit){
+        // Never drop the pick: a nameless row still tells you the slot is filled.
+        unresolved++;
+        names.push("unknown #" + key);
+        return;
+      }
+      names.push(hit.n);
+      if (have.hasOwnProperty(hit.p)){
+        have[hit.p]++;
+        byPos[hit.p].push({ name: hit.n, inj: "", team: hit.t || "" });
+      }
+    });
+
+    if (!names.length) return null;
+    return { have: have, byPos: byPos, count: names.length, names: names,
+             fromDraft: true, how: how, unresolved: unresolved };
+  }
+
+  // The roster endpoint serves LAST season until the new one is scored, so during a
+  // draft your own team is reconstructed from the pick list instead. Your picks are the
+  // ones stamped with your draft slot — Sleeper keeps draft_slot constant across rounds,
+  // so it identifies you in every round of the snake.
+  function rosterFromDraft(payload, slot){
+    var rows = payload && (payload.data || payload.picks);
+    if (!Array.isArray(rows) || !(slot >= 1)) return null;
+    var have  = { QB:0, RB:0, WR:0, TE:0, K:0, "D/ST":0 };
+    var byPos = { QB:[], RB:[], WR:[], TE:[], K:[], "D/ST":[] };
+    var names = [];
+    rows.forEach(function(pk){
+      if (!pk || pk.draft_slot !== slot) return;
+      var m = pk.metadata || {};
+      var pos = (m.position === "DEF" || m.position === "DST") ? "D/ST" : m.position;
+      var nm = ((m.first_name || "") + " " + (m.last_name || "")).trim();
+      if (!nm) return;
+      names.push(nm);
+      if (have.hasOwnProperty(pos)){
+        have[pos]++;
+        byPos[pos].push({ name: nm, inj: m.injury_status || "", team: m.team || "" });
+      }
+    });
+    if (!names.length) return null;
+    return { have: have, byPos: byPos, count: names.length, names: names, fromDraft: true };
+  }
+
+  // Every player already drafted, keyed by provider id AND by normalised name.
+  // Sleeper's availability list does not reflect an in-progress draft, so the draft
+  // itself is the only truthful record of who is gone. Works for both providers:
+  // Sleeper picks carry player_id, ESPN picks carry playerId.
+  function takenFrom(payload){
+    var rows = payload && (payload.data || payload.picks);
+    var ids = {}, names = {}, n = 0;
+    if (!Array.isArray(rows)) return { ids: ids, names: names, count: 0 };
+    rows.forEach(function(pk){
+      if (!pk) return;
+      var pid = pk.player_id != null ? pk.player_id : pk.playerId;
+      if (pid == null || pid === -1 || pid === 0) return;
+      ids[String(pid)] = 1; n++;
+      var m = pk.metadata;
+      if (m && (m.first_name || m.last_name)){
+        names[normName((m.first_name || "") + " " + (m.last_name || ""))] = 1;
+      }
+    });
+    return { ids: ids, names: names, count: n };
+  }
+
+  // Sleeper returns ONLY the picks already made — there are no placeholder rows to
+  // count, so progress comes from the pick count and the board size from the league
+  // shape. Your own next pick is derived from the snake, same as ESPN.
+  function readSleeperDraft(payload, teams, rounds, slot){
+    // Require a real array back: a malformed payload must read as "unknown",
+    // not as an empty draft that has not started.
+    var rows = payload && (payload.data || payload.picks);
+    if (!Array.isArray(rows)) return null;
+    if (!(teams > 1) || !(rounds > 0)) return null;
+
+    // Trust the highest pick_no over the row count: a pick read mid-write could
+    // otherwise undercount and put the clock a pick behind.
+    var made = rows.length, i;
+    for (i = 0; i < rows.length; i++){
+      if (rows[i] && rows[i].pick_no > made) made = rows[i].pick_no;
+    }
+
+    var total = teams * rounds;
+    var complete = made >= total;
+
+    var next = null, away = null;
+    if (slot >= 1 && slot <= teams && !complete){
+      var picks = myPicks(teams, slot, rounds);
+      for (i = 0; i < picks.length; i++){
+        if (picks[i].overall > made){ next = picks[i]; break; }
+      }
+      if (next) away = next.overall - made - 1;
+    }
+
+    return {
+      made: made,
+      total: total,
+      started: made > 0,
+      complete: complete,
+      round: next ? next.round : Math.min(rounds, Math.floor(made / teams) + 1),
+      overall: next ? next.overall : null,
+      slot: next ? next.slot : null,
+      away: away,
+      onClock: away === 0
+    };
+  }
+
+  var prevPool = null;   // name -> {pos, vor} from the last successful check
+  var lastStamp = null;
+
+  function showState(kind, title, bodyHtml){
+    var s = $("state");
+    s.className = "state on" + (kind === "bad" ? " bad" : "");
+    $("stateH").textContent = title;
+    $("stateB").innerHTML = bodyHtml;
+  }
+  function clearState(){ $("state").className = "state"; }
+
+  function diag(txt){ $("diag").textContent = txt; }
+
+  // ---- value model -------------------------------------------------------
+  function normPos(p){ return p === "D/ST" ? "D/ST" : p; }
+
+  function computeBoard(players){
+    var byPos = {};
+    players.forEach(function(row){
+      var p = row && row.player; if (!p || !p.name) return;
+      var pos = normPos(p.position || "");
+      var proj = typeof row.projected === "number" ? row.projected : 0;
+      (byPos[pos] = byPos[pos] || []).push({
+        name: p.name, pos: pos, team: p.proTeam || "",
+        inj: p.injuryStatus || "", proj: proj
+      });
+    });
+    Object.keys(byPos).forEach(function(k){
+      byPos[k].sort(function(a,b){ return b.proj - a.proj; });
+    });
+    var ranks = baselines(LEAGUE), repl = {};
+    Object.keys(ranks).forEach(function(pos){
+      var list = byPos[pos] || [];
+      if (!list.length){ repl[pos] = 0; return; }
+      var idx = Math.min(ranks[pos] - 1, list.length - 1);
+      repl[pos] = list[idx].proj;
+    });
+    var all = [];
+    Object.keys(byPos).forEach(function(pos){
+      var base = repl.hasOwnProperty(pos) ? repl[pos] : 0;
+      byPos[pos].forEach(function(pl, i){
+        pl.vor = pl.proj - base;
+        pl.posRank = i + 1;
+        all.push(pl);
+      });
+    });
+    // PRIMARY SIGNAL: the analyst consensus board. ESPN's projection is only used to
+    // order players the analysts never ranked, and it sorts them BELOW everyone ranked.
+    var UNRANKED = 500;
+    all.forEach(function(pl){
+      var e = boardEntry(pl.name);
+      pl.aRank = e ? e[0] : null;
+      pl.tier  = e ? e[2] : null;
+      pl.ranked = !!e;
+    });
+    all.sort(function(a,b){
+      if (a.ranked && b.ranked) return a.aRank - b.aRank;
+      if (a.ranked) return -1;
+      if (b.ranked) return 1;
+      return b.vor - a.vor;               // neither ranked: fall back to projection
+    });
+    all.forEach(function(pl,i){ pl.overallRank = i + 1; });
+    return { all: all, byPos: byPos, repl: repl, unranked: UNRANKED };
+  }
+
+  // Tier blocks: split a position's list where the value gap is >= 6 points.
+  function tiers(list){
+    var out = [], cur = [];
+    for (var i=0; i<list.length; i++){
+      if (cur.length && (cur[cur.length-1].vor - list[i].vor) >= 6){ out.push(cur); cur = []; }
+      cur.push(list[i]);
+      if (out.length >= 6) break;
+    }
+    if (cur.length) out.push(cur);
+    return out;
+  }
+
+  function readRoster(payload){
+    var entries = payload && payload.roster && payload.roster.entries;
+    if (!Array.isArray(entries)) return null;
+    var have = { QB:0, RB:0, WR:0, TE:0, K:0, "D/ST":0 }, names = [];
+    var byPos = { QB:[], RB:[], WR:[], TE:[], K:[], "D/ST":[] };
+    entries.forEach(function(e){
+      var pl = e && e.player; if (!pl) return;
+      if (have.hasOwnProperty(pl.position)){
+        have[pl.position]++;
+        byPos[pl.position].push({ name: pl.name || "—", inj: pl.injuryStatus || "",
+                                  team: pl.proTeam || "" });
+      }
+      if (pl.name) names.push(pl.name);
+    });
+    return { have: have, byPos: byPos, count: entries.length, names: names };
+  }
+
+  // A prior season's roster comes back when the current one has not been drafted.
+  // Detect it directly: if the players it lists are still free agents, it is stale.
+  function rosterIsStale(roster, board){
+    if (!roster || !roster.names || !roster.names.length) return false;
+    var free = {};
+    board.all.forEach(function(p){ free[p.name] = 1; });
+    var stillFree = 0;
+    roster.names.forEach(function(n){ if (free[n]) stillFree++; });
+    return (stillFree / roster.names.length) > 0.3;
+  }
+
+  function emptyRoster(){
+    return { have:{ QB:0, RB:0, WR:0, TE:0, K:0, "D/ST":0 },
+             byPos:{ QB:[], RB:[], WR:[], TE:[], K:[], "D/ST":[] },
+             count:0, names:[], stale:true };
+  }
+
+  // Which positions are still short of a starting slot, most urgent first.
+  function needsFrom(roster, round){
+    if (!roster) return null;
+    var h = roster.have, short = [];
+    ["RB","WR","TE","QB"].forEach(function(pos){
+      if (h[pos] < LEAGUE.starters[pos]) short.push(pos);
+    });
+    var flexBodies = h.RB + h.WR + h.TE;
+    var flexNeeded = flexBodies < (LEAGUE.starters.RB + LEAGUE.starters.WR + LEAGUE.starters.TE + LEAGUE.flex);
+    // Kicker and defense are deliberately last — never before round 15.
+    if (round >= 15 && h.K < 1) short.unshift("K");
+    if (round >= 16 && h["D/ST"] < 1) short.unshift("D/ST");
+    return { short: short, flexNeeded: flexNeeded, have: h };
+  }
+
+  // The squad panel beside the controls: every player you hold, by position.
+  // The read on the suggested pick. Every line is derived from live board state —
+  // tier depth, the gap to the next name, your unfilled slots, the picks you must
+  // survive before your next turn — so it re-reasons on every press rather than
+  // repeating a stored sentence.
+  function renderAnalysis(board, res, top, round, needs, draftState){
+    var box = $("brief");
+    var e = boardEntry(top.name);
+    var contested = !!(e && e[4]);
+    var next = res.list[1];
+    var gap = next ? (top.vor - next.vor) : 0;
+
+    // Confidence is a judgement about the EVIDENCE, not about the player.
+    var conf, lead;
+    if (contested){
+      conf = "split";
+      lead = "The two analysts genuinely disagree on him. Recency does not settle that, so " +
+             "read both cases in the hero note and make the call yourself.";
+    } else if (!top.ranked){
+      conf = "thin";
+      lead = "Neither analyst ranked him — this is ESPN's projection talking, not a scouted " +
+             "opinion. Treat it as a placeholder and prefer anyone below who is ranked.";
+    } else if (gap >= 15){
+      conf = "strong";
+      lead = "Clear of the next name by " + Math.round(gap) + " points of value over replacement. " +
+             "That is a real separation, not board noise.";
+    } else {
+      conf = "solid";
+      lead = "Ranked by the analysts, but close enough to the next names that either is " +
+             "defensible. Take the one whose role you believe in.";
+    }
+
+    var rows = [];
+    // The hero already prints res.say when the player has no analyst note of his
+    // own, so only add this row when it would say something the hero does not.
+    if (noteFor(top.name)) rows.push(["Why this position now", res.say]);
+
+    if (next){
+      rows.push(["Against " + next.name,
+        gap >= 1 ? Math.round(gap) + " points clear on value over replacement."
+                 : (gap <= -1
+                    ? Math.round(-gap) + " points BEHIND on projection — he is ahead only because the " +
+                      "analysts rank him there."
+                    : "Level on projection. The analysts' order is the only thing separating them.")]);
+    }
+
+    if (top.ranked && top.tier){
+      var sameTier = board.all.filter(function(p){ return p.pos === top.pos && p.tier === top.tier; });
+      rows.push(["Tier " + top.tier + " at " + top.pos,
+        sameTier.length + " left" +
+        (sameTier.length <= 2
+          ? " — this tier is about to cliff. Reaching is justified here."
+          : ". No cliff yet, so the tier will likely survive a pick or two.")]);
+    }
+
+    // What it costs to wait: the picks you must sit through, against how many
+    // players of comparable value are actually on the board.
+    // Round before comparing, so this line cannot contradict the "N points clear"
+    // line above it when the true gap is 12.4 and both are shown as 12.
+    var comparable = res.list.filter(function(p){
+      return p !== top && Math.round(top.vor - p.vor) <= 12;
+    }).length;
+    if (draftState && !draftState.complete){
+      var cfgSlot = currentSlot();
+      var picks = myPicks(LEAGUE.teams, cfgSlot, LEAGUE.rounds), nextMine = null;
+      for (var i = 0; i < picks.length; i++){
+        if (picks[i].overall > draftState.overall){ nextMine = picks[i]; break; }
+      }
+      if (nextMine){
+        var wait = nextMine.overall - draftState.overall;
+        rows.push(["Cost of waiting",
+          wait + " picks until your next turn (" + nextMine.round + "." +
+          String(nextMine.slot).padStart(2,"0") + "). " + comparable +
+          " comparable player" + (comparable === 1 ? "" : "s") + " on the board now."]);
+      }
+    } else {
+      rows.push(["Depth behind him",
+        comparable + " player" + (comparable === 1 ? "" : "s") + " within 12 points of his value."]);
+    }
+
+    var shortNag = needs ? skillOnly(needs.short) : [];
+    if (shortNag.length){
+      rows.push(["Your lineup", "Still missing a starting " + shortNag.join(", ") + "."]);
+    } else if (needs){
+      rows.push(["Your lineup", "Every starting slot is filled — this pick is upside, not need."]);
+    }
+
+    if (top.recAdj && Math.abs(top.recAdj) >= 4){
+      rows.push(["This league's scoring",
+        (top.recAdj > 0 ? "Worth about " + Math.round(top.recAdj) + " points MORE here"
+                        : "Worth about " + Math.round(-top.recAdj) + " points LESS here") +
+        " than the full-PPR board assumes, from the reception value alone."]);
+    }
+
+    if (top.inj && top.inj !== "ACTIVE"){
+      rows.push(["Status", esc(top.inj) + " — confirm he is playing before you click."]);
+    }
+
+    box.innerHTML =
+      '<div class="brief-hd"><span class="brief-ttl">Analysis</span>' +
+      '<span class="brief-conf c-' + conf + '">' + conf + '</span></div>' +
+      '<p class="brief-lead">' + lead + '</p>' +
+      '<ul class="brief-list">' + rows.map(function(r){
+        return '<li><span class="brief-k">' + r[0] + '</span>' + r[1] + '</li>';
+      }).join("") + '</ul>';
+  }
+
+  function renderSquad(roster, needs){
+    var box = $("squad");
+    if (!roster){
+      box.innerHTML = '<p class="squad-empty">Could not read your roster for this league.</p>';
+      return;
+    }
+    // With nothing drafted the skeleton still earns its place: it shows the
+    // shape you have to fill, every slot reading 0 of its requirement.
+    var order = ["QB","RB","WR","TE","K","D/ST"], out = [];
+    order.forEach(function(pos){
+      var list = (roster.byPos && roster.byPos[pos]) || [];
+      var req = LEAGUE.starters[pos] || 0;
+      var isShort = needs && needs.short.indexOf(pos) !== -1;
+      var rows = list.length
+        ? '<ul class="sq-list">' + list.map(function(pl){
+            var inj = (pl.inj && pl.inj !== "ACTIVE" && pl.inj !== "NORMAL")
+              ? ' <span class="sq-inj">' + esc(pl.inj) + '</span>' : "";
+            return '<li>' + esc(pl.name) + inj + '</li>';
+          }).join("") + '</ul>'
+        : '<p class="sq-none">&mdash;</p>';
+      out.push('<div class="sq-grp' + (isShort ? " short" : "") + '">' +
+                 '<div class="sq-hd">' +
+                   '<span class="sq-pos" style="color:var(--' +
+                     pos.toLowerCase().replace("/","") + ')">' + pos + '</span>' +
+                   '<span class="sq-ct">' + list.length + '/' + req + '</span>' +
+                 '</div>' + rows +
+               '</div>');
+    });
+    box.innerHTML = out.join("");
+  }
+
+  function rosterStrip(roster, needs){
+    if (!roster) return "";
+    var order = ["QB","RB","WR","TE","K","D/ST"], out = [];
+    order.forEach(function(pos){
+      var n = roster.have[pos], req = LEAGUE.starters[pos];
+      var isShort = needs && needs.short.indexOf(pos) !== -1;
+      out.push('<span class="'+(isShort ? "short" : "")+'">'+pos+' '+n+'/'+req+'</span>');
+    });
+    return '<div class="rost">'+out.join("")+'</div>';
+  }
+
+  // Kicker and defense are Chris's call on timing, so nothing here ever proposes
+  // one. The Override select still lets him ask for them directly.
+  function skillOnly(list){
+    return (list || []).filter(function(pos){ return pos !== "K" && pos !== "D/ST"; });
+  }
+
+  function pickFor(board, round, need, needs){
+    var plan = PLAN[round] || PLAN[1];
+    var want, why = plan.say;
+
+    if (need === "BPA"){
+      want = null; why = "Best available on the board, any position.";
+    } else if (need !== "auto"){
+      want = [need === "DST" ? "D/ST" : need];
+      why = plan.say;
+    } else {
+      want = plan.pos;
+      if (needs){
+        // Chris times the kicker and the defense himself, so they are never
+        // recommended — only ever shown if he picks that position in Override.
+        var shortSkill = skillOnly(needs.short);
+        if (shortSkill.length){
+          // Prefer plan positions you actually still need; from round 7 the
+          // unfilled starter wins outright.
+          var overlap = plan.pos.filter(function(p){ return shortSkill.indexOf(p) !== -1; });
+          if (round >= 7){
+            want = shortSkill;
+            why = "Your lineup is still missing a starting " + want[0] + ". " + plan.say;
+          } else if (overlap.length){
+            want = overlap;
+            why = plan.say;
+          }
+        } else if (round <= 14){
+          why = "Starting lineup is full — this is upside. " + plan.say;
+        }
+      }
+      want = skillOnly(want);
+      if (!want.length) want = ["RB","WR","TE","QB"];
+    }
+
+    var pool = board.all.filter(function(p){
+      if (!want) return true;
+      return want.indexOf(p.pos) !== -1;
+    });
+    // Kicker and defense values are noise; order them by projection only.
+    if (want && want.length === 1 && (want[0] === "K" || want[0] === "D/ST")){
+      pool = pool.slice().sort(function(a,b){ return b.proj - a.proj; });
+    }
+    return { list: pool, say: why };
+  }
+
+  function paintClock(d, poolSize){
+    var el = $("clock");
+    if (!d){
+      el.className = "clock";
+      el.innerHTML = '<div><span class="l">Draft</span><span class="v">not detected</span></div>'+
+                     '<div><span class="l">On the board</span><span class="v">'+poolSize+'</span></div>'+
+                     '<div><span class="l">League</span><span class="v">'+LEAGUE.teams+' teams &middot; '+LEAGUE.rounds+' rd</span></div>';
+      return;
+    }
+    if (d.complete){
+      el.className = "clock";
+      el.innerHTML = '<div><span class="l">Draft</span><span class="v">complete</span></div>'+
+                     '<div><span class="l">Picks made</span><span class="v">'+d.made+' / '+d.total+'</span></div>';
+      return;
+    }
+    el.className = "clock" + (d.onClock ? " up" : "");
+    var bits = [];
+    bits.push('<div><span class="l">'+(d.onClock ? "You are on the clock" : "Your next pick")+'</span>'+
+              '<span class="v">'+d.round+'.'+String(d.slot).padStart(2,"0")+
+              ' &middot; #'+d.overall+'</span></div>');
+    if (!d.onClock) bits.push('<div><span class="l">Picks away</span><span class="v">'+d.away+'</span></div>');
+    bits.push('<div><span class="l">Made</span><span class="v">'+d.made+'</span></div>');
+    bits.push('<div><span class="l">On the board</span><span class="v">'+poolSize+'</span></div>');
+    bits.push('<div><span class="l">League</span><span class="v">'+LEAGUE.teams+' teams &middot; '+LEAGUE.rounds+' rd</span></div>');
+    el.innerHTML = bits.join("");
+  }
+
+  function render(board, round, need, stamp, draftState, roster, needs){
+    var res = pickFor(board, round, need, needs);
+    var top = res.list[0];
+    if (!top){
+      showState("bad", "Nothing left at that position",
+        "<p>The pool came back with no players matching that filter. Try <code>Best available, any</code>.</p>");
+      return;
+    }
+    clearState();
+
+    var n = noteFor(top.name);
+    $("heroKicker").textContent = (draftState && draftState.onClock ? "On the clock — take"
+                                  : "Round " + round + " — take");
+    $("heroName").innerHTML = esc(top.name) + adjBadge(top.recAdj) +
+      '<span class="pos-tag t-'+(top.pos === "D/ST" ? "DST" : top.pos)+'">'+esc(top.pos)+String(top.posRank)+'</span>';
+    var metaBits = [];
+    if (top.team) metaBits.push(top.team);
+    if (top.ranked){
+      var e = boardEntry(top.name);
+      var both = (e && e[5] && e[6]) ? ("Mason " + e[5] + " / Sal " + e[6]) : null;
+      metaBits.push("analyst board #" + (top.aRank/10) + (top.tier ? " · tier " + top.tier : ""));
+      if (both) metaBits.push(both);
+      if (e && e[4]) metaBits.push("CONTESTED — the two analysts disagree");
+    } else {
+      metaBits.push("not on the analyst board");
+    }
+    metaBits.push(Math.round(top.vor) + " over replacement (ESPN)");
+    if (top.inj && top.inj !== "ACTIVE") metaBits.push(top.inj);
+    $("heroMeta").textContent = metaBits.join("  ·  ");
+    $("heroWhy").innerHTML = n ? esc(n[1]) : esc(res.say);
+    var he = boardEntry(top.name);
+    document.querySelector(".hero").className = "hero" + (he && he[4] ? " contested" : "");
+
+    var alts = $("alts"); alts.innerHTML = "";
+    res.list.slice(1, 9).forEach(function(p){
+      var nn = noteFor(p.name);
+      var tr = document.createElement("tr");
+      var ent = boardEntry(p.name);
+      var adj = adjBadge(p.recAdj);
+      tr.innerHTML =
+        '<td class="nm">'+esc(p.name)+(ent && ent[4] ? '<span class="badge b-warn">split</span>' : "")+adj+'</td>'+
+        '<td>'+esc(p.pos)+String(p.posRank)+'</td>'+
+        '<td class="num">'+(p.ranked ? "#"+(p.aRank/10) : "&mdash;")+'</td>'+
+        '<td class="num">'+Math.round(p.vor)+'</td>'+
+        '<td class="note">'+(nn ? esc(nn[1]) : "")+'</td>';
+      alts.appendChild(tr);
+    });
+
+    // Tier health straight from the analysts' own tier letters.
+    var chips = $("chips"); chips.innerHTML = "";
+    ["RB","WR","TE"].forEach(function(pos){
+      var byTier = {};
+      board.all.forEach(function(p){
+        if (p.pos !== pos || !p.ranked || !p.tier) return;
+        (byTier[p.tier] = byTier[p.tier] || []).push(p);
+      });
+      Object.keys(byTier).sort().slice(0,4).forEach(function(t){
+        var b = byTier[t];
+        var d = document.createElement("div");
+        d.className = "chip" + (b.length <= 2 ? " dry" : "");
+        d.innerHTML = '<b style="color:var(--'+pos.toLowerCase()+')">'+pos+' '+t+'</b>'+
+                      '<span class="n">'+b.length+'</span>'+
+                      '<span style="color:var(--dim)">#'+b[0].aRank+'&ndash;'+b[b.length-1].aRank+'</span>';
+        chips.appendChild(d);
+      });
+    });
+
+    var goneT = $("gone"); goneT.innerHTML = "";
+    if (!prevPool){
+      goneT.innerHTML = '<tr><td colspan="3" class="note">First check — nothing to compare against yet. Press the button again after some picks.</td></tr>';
+    } else {
+      var now = {}; board.all.forEach(function(p){ now[p.name] = 1; });
+      var missing = Object.keys(prevPool).filter(function(k){ return !now[k]; })
+        .map(function(k){ return { name:k, pos:prevPool[k].pos, vor:prevPool[k].vor,
+                                   aRank:(boardEntry(k) ? boardEntry(k)[0] : null) }; })
+        .sort(function(a,b){
+          if (a.aRank && b.aRank) return a.aRank - b.aRank;
+          if (a.aRank) return -1; if (b.aRank) return 1;
+          return b.vor - a.vor; });
+      if (!missing.length){
+        goneT.innerHTML = '<tr><td colspan="3" class="note">No change since the last check.</td></tr>';
+      } else {
+        missing.slice(0,14).forEach(function(m){
+          var tr = document.createElement("tr");
+          tr.innerHTML = '<td class="nm">'+esc(m.name)+'</td><td>'+esc(m.pos)+'</td>'+
+                         '<td class="num">'+(m.aRank ? "#"+(m.aRank/10) : "&mdash;")+'</td>';
+          goneT.appendChild(tr);
+        });
+      }
+    }
+
+    prevPool = {};
+    board.all.forEach(function(p){ prevPool[p.name] = { pos:p.pos, vor:p.vor }; });
+
+    paintClock(draftState, board.all.length);
+    $("clock").insertAdjacentHTML("beforeend", rosterStrip(roster, needs));
+    renderSquad(roster, needs);
+    renderAnalysis(board, res, top, round, needs, draftState);
+    $("answer").className = "answer on";
+    $("stamp").textContent = stamp;
+  }
+
+  // ---- error handling ----------------------------------------------------
+  function handleErr(e){
+    // A ReferenceError/TypeError from this page is a bug in the page, not a
+    // connector failure. Reporting it as "upstream_error" hides that.
+    if (e instanceof Error && !e.code){
+      diag("PAGE ERROR (not a connector problem)\n" + (e.stack || e.message));
+      showState("bad", "Bug in this page",
+        "<p><code>" + esc(e.message) + "</code></p>" +
+        "<p>The connector is fine &mdash; this is a fault in the page itself. " +
+        "Send me that message and the diagnostics text and I will fix it.</p>");
+      return;
+    }
+    var code = (e && e.code) || "upstream_error";
+    var srv = (e && e.server) || SERVER;
+    var msg = (e && e.message) || "";
+    diag("Last error code: " + code + "\nserver: " + srv + "\nmessage: " + msg);
+
+    if (code === "needs_reauth"){
+      showState("bad", "Connector needs reconnecting",
+        "<p>Your League Loom connection has expired. Reconnect it in <strong>claude.ai → Settings → Connectors</strong>, then press the button again.</p>");
+    } else if (code === "server_not_connected"){
+      showState("bad", "League Loom is not connected here",
+        "<p>This page could not find a connector called <code>"+esc(srv)+"</code> for you. Add it in <strong>claude.ai → Settings → Connectors</strong>.</p>"+
+        "<p>If League Loom is set up only inside Claude Code rather than on your claude.ai account, a published page cannot reach it — open the diagnostics below and send me what it says.</p>");
+    } else if (code === "selection_required"){
+      showState("bad", "Choose which connector to use",
+        "<p>You have more than one connector named <code>"+esc(srv)+"</code>. Pick one when claude.ai prompts, then press the button again.</p>");
+    } else if (code === "not_in_manifest"){
+      showState("bad", "Not permitted for this page",
+        "<p>This page is not allowed to call that tool, or you declined the permission. Reload and accept the connector prompt.</p>");
+    } else if (code === "blocked_by_policy" || code === "approval_required"){
+      showState("bad", "Blocked by policy",
+        "<p>Your organisation's policy blocks this call from a page. Use the draft brief in Claude Code instead.</p>");
+    } else if (code === "not_granted" || code === "capability_disabled" || code === "capability_removed"){
+      showState("bad", "Live data is not available in this view",
+        "<p>This view cannot reach connectors. Open the artifact from claude.ai rather than a direct link, or fall back to asking me in chat.</p>");
+    } else if (code === "tool_error"){
+      showState("bad", "League Loom returned an error",
+        "<p>"+esc(msg || "The tool ran but reported a failure.")+"</p><p>Check the league id is still right, then try once more.</p>");
+    } else if (code === "server_unavailable" || code === "rate_limited"){
+      showState("warn", "ESPN did not answer",
+        "<p>Temporary — the connector or ESPN was briefly unreachable. Press the button again.</p>");
+    } else {
+      showState("bad", "Could not read the board",
+        "<p>"+esc(msg || "Unexpected failure.")+"</p><p>Press the button again. If it keeps failing, ask me in chat and read me the names instead.</p>");
+    }
+  }
+
+  // ---- the button --------------------------------------------------------
+  var busy = false;
+  $("go").addEventListener("click", function(){
+    if (busy) return;
+    busy = true;
+    var btn = $("go");
+    var label = btn.textContent;
+    btn.disabled = true; btn.textContent = "Reading the board…";
+    clearState();
+
+    var t0 = Date.now();
+    (async function(){
+      try {
+        var mcp = await window.claude.use("mcp");
+        if (!mcp){
+          showState("bad", "Live data is not available in this view",
+            "<p>This view cannot reach connectors. Open the artifact from claude.ai rather than a direct link.</p>");
+          return;
+        }
+        var cfg = leagueCfg();
+        var isSleeper = cfg.prov === "sleeper";
+        var base   = { league_id: cfg.id, provider: cfg.prov, sport:"NFL" };
+        var poolIn = { league_id: cfg.id, provider: cfg.prov, sport:"NFL", limit: MAX_LIMIT };
+        if (!isSleeper){ base.season = SEASON; poolIn.season = SEASON; poolIn.sort = "projected"; }
+        var creds = (isSleeper && cfg.user) ? { username: cfg.user } : null;
+        if (creds){ base.credentials = creds; poolIn.credentials = creds; }
+
+        var poolP = mcp.callTool(SERVER, T_POOL, poolIn, { cache:{ refresh:true } });
+        var infoP = mcp.callTool(SERVER, T_INFO, base,   { cache:{ staleTime: 300000 } })
+                       .catch(function(e){ return { __err:e }; });
+        // Sleeper has no projections, so values are joined in from the ESPN
+        // projection pool. Draft picks it does serve, in its own shape.
+        var draftIn = isSleeper ? { league_id: cfg.id, provider: cfg.prov, sport:"NFL", season: SEASON }
+                                : base;
+        var draftP = mcp.callTool(SERVER, T_DRAFT, draftIn, { cache:{ refresh:true } })
+               .catch(function(e){ return { __err:e }; });
+        // Sleeper can match your roster once a username is supplied.
+        var teamP = (isSleeper && !creds) ? null
+          : mcp.callTool(SERVER, T_TEAM, base, { cache:{ refresh:true } })
+               .catch(function(e){ return { __err:e }; });
+        var projP  = isSleeper
+          ? mcp.callTool(SERVER, T_POOL, PROJ, { cache:{ staleTime: 300000 } })
+               .catch(function(e){ return { __err:e }; })
+          : null;
+
+        var poolRes = await poolP;
+        var payload = poolRes && poolRes.payload;
+        var players = payload && payload.players;
+        // Snapshot id -> name while these players are still free agents. Once they
+        // are drafted they leave this pool, and ESPN picks carry no names at all.
+        var mapped = rememberPlayers(players);
+        if (!Array.isArray(players) || !players.length){
+          showState("bad", "The board came back empty",
+            "<p>The connector answered but returned no players. Check the league id and platform.</p>");
+          diag("Pool payload keys: " + (payload ? Object.keys(payload).join(", ") : "none"));
+          return;
+        }
+
+        // League shape first — it sets the replacement levels everything depends on.
+        var shapeNote = "league shape: using the values you picked";
+        var warnBits = null, shape = null;
+        var iRes = await infoP;
+        if (!(iRes && iRes.__err)){
+          shape = isSleeper ? readSleeperShape(iRes && iRes.payload)
+                            : readLeagueShape(iRes && iRes.payload);
+          if (shape){
+            LEAGUE.rounds   = shape.rounds;
+            LEAGUE.starters = shape.starters;
+            LEAGUE.flex     = shape.flex;
+            if (shape.teams && shape.teams !== currentTeams()){
+              fillSelect($("teams"), 4, 20, shape.teams);
+              rebuildSlots(); saveSetup();
+            }
+            rebuildRounds();
+            shapeNote = "league shape: " + shape.teams + " teams, " + shape.rounds +
+                        " rounds, starters " + JSON.stringify(shape.starters) +
+                        ", flex " + shape.flex + (shape.name ? " (" + shape.name + ")" : "") +
+                        (shape.status ? " status=" + shape.status : "");
+            if (isSleeper) warnBits = scoringWarning(shape);
+          }
+        }
+        LEAGUE.teams = currentTeams();
+
+        // The draft is read BEFORE the pool is chosen: it is the only trustworthy record
+        // of who is gone, and it is also how we test whether the availability list is lying.
+        var dRes = draftP ? await draftP : null;
+
+        // The manual log wins whenever it knows more than the provider does, which
+        // during a live ESPN draft is always: the feed does not move until the draft
+        // ends. Shaping it into an ESPN payload keeps every reader below unchanged.
+        var manualNote = "", manualOn = false;
+        var mLog = loadLog(cfg.id);
+        if (mLog.length){
+          var apiFilled = 0;
+          var apiRows = (dRes && !dRes.__err && dRes.payload && dRes.payload.picks) || [];
+          for (var mi = 0; mi < apiRows.length; mi++){ if (isFilled(apiRows[mi])) apiFilled++; }
+          if (mLog.length > apiFilled){
+            dRes = { payload: { picks: manualPicks(mLog, cfg.teams, LEAGUE.rounds) } };
+            manualOn = true;
+            var unres = 0;
+            for (var mj = 0; mj < mLog.length; mj++){ if (mLog[mj].id == null) unres++; }
+            manualNote = "manual log: " + mLog.length + " picks driving the board" +
+                         (apiFilled ? " (API had " + apiFilled + ")" : " (API feed empty)") +
+                         (unres ? " \u2014 " + unres + " name(s) unmatched, struck off by name only" : "");
+          } else {
+            manualNote = "manual log: " + mLog.length + " entered, API has " + apiFilled +
+                         " \u2014 using the API";
+          }
+        }
+
+        var taken = (dRes && !dRes.__err) ? takenFrom(dRes.payload)
+                                          : { ids:{}, names:{}, count:0 };
+        function isTaken(pl){
+          if (!pl) return false;
+          if (pl.id != null && taken.ids[String(pl.id)]) return true;
+          if (pl.name && taken.names[normName(pl.name)]) return true;
+          return false;
+        }
+
+        // Sleeper rows carry no projections — join ESPN's in by name.
+        var mergeNote = "", carryover = false;
+        if (isSleeper){
+          var pRes = await projP;
+          if (pRes && pRes.__err){
+            var pe = pRes.__err || {};
+            showState("bad", "Could not load projections",
+              "<p>Sleeper publishes no projected points, so values are borrowed from your ESPN " +
+              "league. That call failed: <code>" + esc(pe.code || "?") + "</code>" +
+              (pe.message ? " &mdash; " + esc(pe.message) : "") + "</p>" +
+              "<p>The analyst ranking still works without it; only the VOR column and the ordering " +
+              "of unranked depth players need projections. Press the button again, and if it keeps " +
+              "failing send me that code.</p>");
+            diag("projection call failed: " + (pe.code||"?") + " " + (pe.message||""));
+            return;
+          }
+          var espnRows = pRes && pRes.payload && pRes.payload.players;
+          // Sleeper's availability list does not track a live draft. Prove it directly:
+          // if it still offers players the draft says are gone, it cannot be trusted at
+          // all — it is last season's roster snapshot, which also HIDES ~158 players who
+          // are genuinely draftable. Either way the answer is to use the full board.
+          var liarCount = 0;
+          (players || []).forEach(function(row){ if (isTaken(row && row.player)) liarCount++; });
+          carryover = poolIsCarryover(shape, payload) || liarCount > 0;
+          if (carryover){
+            // Ignore the stale availability list and show the whole projection board.
+            players = (espnRows || []).map(function(row){
+              var pl = row.player || {};
+              return { player:{ id:pl.id, name:pl.name, position:pl.position,
+                                proTeam:pl.proTeam, injuryStatus:pl.injuryStatus },
+                       projected: row.projected };
+            });
+            mergeNote = "pool: IGNORED (" + (liarCount ? liarCount + " already-drafted players were listed as available" : "pre-draft carryover") + "), " + (payload.rostered || 0) +
+                        " rostered players — they belong to league " +
+                        "(previous season) and the draft has not happened; showing the full board";
+          } else {
+            var merged = mergeSleeper(players, espnRows);
+            players = merged.rows;
+            mergeNote = "projection join: " + merged.matched + "/" + merged.total + " matched" +
+                        (merged.misses.length ? "; unmatched sample: " + merged.misses.join(", ") : "");
+          }
+        }
+
+        // Drafted players come off the board here, using the draft itself. This has to
+        // happen for BOTH pool paths above: Sleeper's availability list reports last
+        // season's rosters until the new draft completes, so it simultaneously hides
+        // players who are genuinely free and lists tonight's picks as available.
+        var takenNote = "taken: not applied";
+        if (dRes && !dRes.__err){
+          if (taken.count){
+            var beforeCut = players.length;
+            players = players.filter(function(row){ return !isTaken(row && row.player); });
+            takenNote = "taken: removed " + (beforeCut - players.length) +
+                        " drafted players from the board (" + taken.count + " picks made)";
+          } else {
+            takenNote = "taken: no picks made yet";
+          }
+        }
+
+        var board = computeBoard(players);
+        applyScoring(board, shape ? shape.rec : null);
+
+        var draftState = null, draftNote = "draft: not read";
+        if (dRes)
+        {
+        if (dRes && dRes.__err){
+          draftNote = "draft call failed (" + ((dRes.__err && dRes.__err.code) || "?") + ") — round falls back to the selector";
+        } else {
+          draftState = isSleeper
+            ? readSleeperDraft(dRes && dRes.payload, cfg.teams, LEAGUE.rounds, cfg.slot)
+            : readDraft(dRes && dRes.payload, cfg.teams, cfg.slot);
+          if (draftState){
+            // Guard: ESPN returns a PRIOR season's completed board when no draft
+            // exists yet for this one. If it claims complete while elite players
+            // are still free, the board is stale — ignore it. Sleeper is scoped by
+            // league id, so a new league never sees the old one's picks.
+            var eliteFree = board.all.length && board.all[0].vor > 80;
+            if (!isSleeper && draftState.complete && eliteFree){
+              draftNote = "draft endpoint returned a completed board while elite players are still free — treating as not started";
+              draftState = null;
+            } else {
+              draftNote = "draft: " + draftState.made + "/" + draftState.total + " made" +
+                          (isSleeper ? " (sleeper, your slot " + cfg.slot + ")" : "") +
+                          (draftState.complete ? ", complete"
+                           : ", next " + draftState.round + "." + draftState.slot +
+                             " (#" + draftState.overall + "), " + draftState.away + " away");
+            }
+          } else {
+            draftNote = "draft: no pick slots returned";
+          }
+        }
+
+        }
+        // Prefer the draft itself: it is the only source that reflects tonight's picks,
+        // and it is the only one that still works if fantasy_get_my_team stops answering
+        // mid-draft — which is exactly what happened in the Sleeper draft.
+        var roster = null, derivedSlot = null;
+        if (dRes && !dRes.__err){
+          roster = rosterFromDraft(dRes.payload, cfg.slot);          // Sleeper shape
+          if (!roster && !isSleeper){
+            var espnRows = dRes.payload && (dRes.payload.picks || dRes.payload.data);
+            // Manual rows stamp teamId with the draft slot, so that is the key then.
+            var myId = manualOn ? cfg.slot : (MY_TEAM[String(cfg.id)] || 0);
+            derivedSlot = slotFromEspnDraft(espnRows, myId, LEAGUE.teams);
+            roster = rosterFromEspnDraft(dRes.payload, myId, cfg.slot,
+                                         LEAGUE.teams, players);
+          }
+        }
+        var rosterNote = roster
+          ? "roster: " + roster.count + " players rebuilt from your draft picks (" +
+            (roster.how || ("slot " + cfg.slot)) + ") " + JSON.stringify(roster.have) +
+            (roster.unresolved ? " — " + roster.unresolved +
+              " not in the baked-in id map (player added since 30 Aug); the pick is still counted" : "")
+          : ((isSleeper && !creds)
+              ? "roster: skipped — enter your Sleeper username to match your team"
+              : "roster: not read");
+        if (typeof mapped === "number"){
+          rosterNote += " · id map: " + Object.keys(SEED_IDS).length + " baked in, " +
+                        mapped + " refreshed this fetch, " +
+                        Object.keys(loadPlayerMap()).length + " total";
+        }
+        // The draft is the only trustworthy source for the slot once it starts.
+        if (derivedSlot && derivedSlot !== cfg.slot){
+          rosterNote += " · ⚠ your picks say slot " + derivedSlot +
+                        ", the selector says " + cfg.slot;
+          showState("warn", "Your real draft slot is " + derivedSlot + ", not " + cfg.slot,
+            "<p>Read back from your own picks: in an odd round the pick number within the " +
+            "round <em>is</em> your slot. League settings can be stale, the draft cannot. " +
+            "<strong>Change the &ldquo;My pick&rdquo; selector to " + derivedSlot +
+            "</strong> so the ladder and the wait-cost maths are right.</p>");
+        }
+        var tRes = (!roster && teamP) ? await teamP : null;
+        if (tRes){
+        if (tRes && tRes.__err){
+          rosterNote = "roster call failed (" + ((tRes.__err && tRes.__err.code) || "?") + ") — position falls back to the plan";
+        } else {
+          roster = readRoster(tRes && tRes.payload);
+          if (roster && rosterIsStale(roster, board)){
+            rosterNote = "roster: ignored " + roster.count +
+                         " players from a previous season (they are still free agents) - treating as empty";
+            roster = emptyRoster();
+          } else {
+            rosterNote = roster ? ("roster: " + roster.count + " players " + JSON.stringify(roster.have))
+                                : "roster: no entries returned";
+          }
+        }
+
+        }
+
+        if (carryover){
+          showState("warn", "Last season's rosters are still attached",
+            "<p>This league has not drafted yet, but Sleeper still reports " +
+            (payload.rostered || 0) + " players as rostered &mdash; those are <strong>last season's " +
+            "teams</strong>, carried over until the new draft happens.</p>" +
+            "<p>The availability list is therefore wrong, so it has been ignored: the board below shows " +
+            "<strong>every player</strong>, which is what you will actually be drafting from. " +
+            "Players taken in tonight&rsquo;s draft are subtracted from it using the live pick list, " +
+            "because Sleeper&rsquo;s availability does <em>not</em> update while the draft runs." +
+            (warnBits ? " Note also that " + warnBits.join("; ") + "." : "") + "</p>");
+        } else if (warnBits){
+          showState("warn", "Scoring differs from the projection source",
+            "<p>Values come from ESPN projections; " + warnBits.join("; ") + ".</p>" +
+            "<p>Rankings within a position stay broadly right &mdash; the distortion is mostly " +
+            "<em>between</em> positions.</p>");
+        }
+
+        var chosen = $("round").value;
+        var round;
+        if (chosen === "auto"){
+          if (draftState){
+            round = draftState.round;
+          } else {
+            round = 1;
+            showState("warn", "No live draft found",
+              "<p>Could not read an in-progress draft for this league, so the plan is showing round 1 " +
+              "using the pick you selected. Once the draft is live the round detects itself; until then, " +
+              "use <strong>Override</strong> below to plan a specific round.</p>");
+          }
+        } else {
+          round = parseInt(chosen, 10);
+        }
+
+        var needs = needsFrom(roster, round);
+        var ms = Date.now() - t0;
+        var when = poolRes.cache && poolRes.cache.storedAt ? new Date(poolRes.cache.storedAt) : new Date();
+        lastStamp = players.length + " players still on the board · read at " +
+                    when.toLocaleTimeString() + " · " + ms + " ms";
+        var lines = ["OK — " + players.length + " available, " + ms + " ms",
+                     manualNote, draftNote, takenNote, rosterNote, shapeNote, mergeNote,
+                     "replacement ranks: " + JSON.stringify(baselines(LEAGUE)),
+                     "replacement points: " + JSON.stringify(board.repl),
+                     poolRes.cache
+                       ? "served from cache, storedAt " + new Date(poolRes.cache.storedAt).toISOString()
+                       : "executed fresh"];
+        diag(lines.join("\n"));
+        render(board, round, $("need").value, lastStamp, draftState, roster, needs);
+      } catch(e){
+        handleErr(e);
+      } finally {
+        busy = false; btn.disabled = false; btn.textContent = label;
+      }
+    })();
+  });
+
+  // Adapt at load: what can this page actually reach?
+  (async function(){
+    try {
+      var mcp = await window.claude.use("mcp");
+      if (!mcp){ diag("claude.use(\"mcp\") resolved null — no connector access in this view."); return; }
+      var lt = await mcp.listTools();
+      var names = (lt.servers || []).map(function(s){
+        return s.server + " [" + s.authStatus + "] " + (s.tools || []).length + " tools";
+      });
+      diag(names.length ? "Reachable connectors:\n  " + names.join("\n  ")
+                        : "No connectors reachable from this page.");
+    } catch(e){
+      diag("listTools failed: " + ((e && e.code) || "?") + " " + ((e && e.message) || ""));
+    }
+  })();
+})();
+</script>

@@ -1,0 +1,9 @@
+# Whitelist: this directory holds private draft prep (analyst transcripts,
+# strategy briefs, personal notes). Ignore EVERYTHING, then re-admit only the
+# files that belong in the public repo.
+*
+
+!.gitignore
+!README.md
+!index.html
+!draft-console.html
